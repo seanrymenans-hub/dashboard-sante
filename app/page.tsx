@@ -8,6 +8,7 @@ import GraphiqueCalories from './components/GraphiqueCalories'
 import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
+import SuggestionRepas from './components/SuggestionRepas'
 import Parametres from './components/Parametres'
 import Composition from './components/Composition'
 import WithingsSync from './components/WithingsSync'
@@ -72,6 +73,7 @@ export default function Home() {
           <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
         </div>
         <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
+        <SuggestionRepas repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
         <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
         <Sport seances={seances} onRefresh={fetchData} />
 
