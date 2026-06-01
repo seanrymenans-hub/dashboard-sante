@@ -10,9 +10,9 @@ import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 
 export default function Home() {
-  const [poids, setPoids] = useState([])
-  const [repas, setRepas] = useState([])
-  const [seances, setSeances] = useState([])
+  const [poids, setPoids] = useState<any[]>([])
+  const [repas, setRepas] = useState<any[]>([])
+  const [seances, setSeances] = useState<any[]>([]) 
   const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
