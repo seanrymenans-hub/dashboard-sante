@@ -77,18 +77,19 @@ export async function GET(request) {
 
     const compFields = ['masse_grasse', 'masse_hydrique', 'masse_musculaire', 'masse_maigre', 'masse_osseuse', 'graisse_viscerale']
 if (compFields.some(f => measures[f] !== undefined)) {
-      await supabase.from('composition').upsert({
-        date,
-        masse_grasse: Math.round((measures.masse_grasse || 0) * 10) / 10,
-        masse_musculaire: Math.round((measures.masse_musculaire || 0) * 10) / 10,
-        masse_hydrique: Math.round((measures.masse_hydrique || 0) * 10) / 10,
-        graisse_viscerale: Math.round((measures.graisse_viscerale || 0) * 10) / 10,
-        masse_maigre: Math.round((measures.masse_maigre || 0) * 10) / 10,
-        masse_osseuse: Math.round((measures.masse_osseuse || 0) * 10) / 10,
-      }, { onConflict: 'date' })
-      synced++
-    }
+  const { data: existing } = await supabase.from('composition').select('*').eq('date', date).single()
+  const updated = {
+    date,
+    masse_grasse: Math.round(((measures.masse_grasse ?? existing?.masse_grasse) || 0) * 10) / 10,
+    masse_musculaire: Math.round(((measures.masse_musculaire ?? existing?.masse_musculaire) || 0) * 10) / 10,
+    masse_hydrique: Math.round(((measures.masse_hydrique ?? existing?.masse_hydrique) || 0) * 10) / 10,
+    graisse_viscerale: Math.round(((measures.graisse_viscerale ?? existing?.graisse_viscerale) || 0) * 10) / 10,
+    masse_maigre: Math.round(((measures.masse_maigre ?? existing?.masse_maigre) || 0) * 10) / 10,
+    masse_osseuse: Math.round(((measures.masse_osseuse ?? existing?.masse_osseuse) || 0) * 10) / 10,
   }
+  await supabase.from('composition').upsert(updated, { onConflict: 'date' })
+  synced++
+}
 
   return Response.json({ success: true, synced, total: groups.length })
 }
