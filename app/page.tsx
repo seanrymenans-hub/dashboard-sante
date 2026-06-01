@@ -12,6 +12,7 @@ import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import SuggestionRepas from './components/SuggestionRepas'
+import CoachIA from './components/CoachIA'
 import Parametres from './components/Parametres'
 
 export default function Home() {
@@ -89,9 +90,11 @@ export default function Home() {
                 <div className="h-2 bg-gray-100 rounded">
                   <div className="h-2 bg-green-500 rounded transition-all" style={{ width: progression + '%' }} />
                 </div>
-                <div className="text-xs text-gray-400 mt-1">{(poidsDepart - dernierPoids).toFixed(1)} kg perdus · {(dernierPoids - objectifPoids).toFixed(1)} kg restants</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {(poidsDepart - dernierPoids).toFixed(1)} kg perdus · {(dernierPoids - objectifPoids).toFixed(1)} kg restants
+                </div>
               </div>
-              <div className="mb-4">
+              <div className="mb-2">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Calories aujourd'hui</span>
                   <span className="font-medium">{kcalAujourdhui} / {kcalObj} kcal</span>
@@ -104,6 +107,7 @@ export default function Home() {
                 🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{dateObjectif.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
               </div>
             </div>
+            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>
         )}
 
