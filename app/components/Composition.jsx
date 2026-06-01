@@ -40,7 +40,6 @@ export default function Composition({ composition, onRefresh }) {
     { label: 'Masse grasse', val: derniere?.masse_grasse, pct: derniere?.masse_grasse_pct, unit: 'kg', color: '#EF9F27', prev: composition?.[1]?.masse_grasse },
     { label: 'Masse musculaire', val: derniere?.masse_musculaire, pct: derniere?.masse_musculaire_pct, unit: 'kg', color: '#1D9E75', prev: composition?.[1]?.masse_musculaire },
     { label: 'Masse hydrique', val: derniere?.masse_hydrique, pct: derniere?.masse_hydrique_pct, unit: 'kg', color: '#378ADD', prev: composition?.[1]?.masse_hydrique },
-    { label: 'Graisse viscérale', val: derniere?.graisse_viscerale, unit: '', color: '#D85A30', prev: composition?.[1]?.graisse_viscerale },
     { label: 'Masse maigre', val: derniere?.masse_maigre, unit: 'kg', color: '#534AB7', prev: composition?.[1]?.masse_maigre },
     { label: 'Masse osseuse', val: derniere?.masse_osseuse, unit: 'kg', color: '#888780', prev: composition?.[1]?.masse_osseuse },
   ]

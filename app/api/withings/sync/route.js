@@ -64,7 +64,6 @@ export async function GET(request) {
       if (m.type === 1) measures.poids = val
       if (m.type === 6) measures.masse_grasse_pct = val
       if (m.type === 8) measures.masse_hydrique_pct = val
-      if (m.type === 11) measures.graisse_viscerale = val / 10
       if (m.type === 76) measures.masse_musculaire = val
       if (m.type === 77) measures.masse_maigre = val
       if (m.type === 88) measures.masse_osseuse = val
