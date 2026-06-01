@@ -10,6 +10,7 @@ import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import Parametres from './components/Parametres'
 import Composition from './components/Composition'
+import WithingsSync from './components/WithingsSync'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -62,6 +63,7 @@ export default function Home() {
           </button>
         </div>
 
+        <WithingsSync onRefresh={fetchData} />
         <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
         <Composition composition={composition} onRefresh={fetchData} />
         <LoggerPoids poids={poids} onRefresh={fetchData} />
