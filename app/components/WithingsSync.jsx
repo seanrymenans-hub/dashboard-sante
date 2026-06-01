@@ -9,9 +9,10 @@ export default function WithingsSync({ onRefresh }) {
 
   useEffect(() => {
     async function check() {
-      const { data } = await supabase.from('withings_tokens').select('id').limit(1).single()
-      setConnecte(!!data)
-    }
+  const { data, error } = await supabase.from('withings_tokens').select('id').limit(1)
+  console.log('Withings check:', data, error)
+  setConnecte(data && data.length > 0)
+}
     check()
     if (window.location.search.includes('withings=connected')) {
       setConnecte(true)
