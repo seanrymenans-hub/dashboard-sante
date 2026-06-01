@@ -13,7 +13,6 @@ export default function WithingsSync({ onRefresh }) {
       setConnecte(!!data)
     }
     check()
-
     if (window.location.search.includes('withings=connected')) {
       setConnecte(true)
       window.history.replaceState({}, '', '/')
@@ -50,18 +49,11 @@ export default function WithingsSync({ onRefresh }) {
       <div className="flex items-center gap-2">
         {succes && <span className="text-xs text-gray-400">{succes}</span>}
         {connecte ? (
-          <button
-            onClick={synchroniser}
-            disabled={loading}
-            className="text-sm border border-gray-200 rounded-lg px-4 py-1.5"
-          >
+          <button onClick={synchroniser} disabled={loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
             {loading ? 'Sync...' : '↻ Synchroniser'}
           </button>
         ) : (
-          
-            href="/api/withings/auth"
-            className="text-sm bg-black text-white rounded-lg px-4 py-1.5"
-          >
+          <a href="/api/withings/auth" className="text-sm bg-black text-white rounded-lg px-4 py-1.5">
             Connecter Withings
           </a>
         )}
