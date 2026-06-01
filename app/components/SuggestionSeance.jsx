@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 
-export default function SuggestionSeance({ seances, repas, poids, objectifs }) {
+export default function SuggestionSeance({ seances, repas, poids, objectifs, composition }) {
   const [suggestion, setSuggestion] = useState(null)
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState(null)
@@ -13,7 +13,7 @@ export default function SuggestionSeance({ seances, repas, poids, objectifs }) {
       const res = await fetch('/api/suggestion-seance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seances, repas, poids, objectifs })
+        body: JSON.stringify({ seances, repas, poids, objectifs, composition })
       })
       const data = await res.json()
       if (data.suggestion) setSuggestion(data.suggestion)
