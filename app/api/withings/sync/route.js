@@ -48,6 +48,9 @@ export async function GET(request) {
   const groups = measData.body?.measuregrps || []
 
   if (request.url.includes('debug=1')) {
+    if (request.url.includes('debug=2')) {
+  return Response.json({ all: groups.map(g => ({ date: new Date(g.date * 1000).toISOString().split('T')[0], measures: g.measures })) })
+}
     const allTypes = groups.flatMap(g => g.measures.map(m => m.type))
     const uniqueTypes = [...new Set(allTypes)]
     return Response.json({ types: uniqueTypes, sample: groups[0] })
