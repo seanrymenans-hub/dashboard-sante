@@ -36,7 +36,7 @@ export async function GET(request) {
   const access_token = await refreshToken(tokens)
   const startdate = Math.floor(Date.now() / 1000) - 90 * 24 * 60 * 60
 
-  const measRes = await fetch('https://wbsapi.withings.net/measure?action=getmeas&meastypes=1,6,8,11,76,77,88&category=1&startdate=' + startdate, {
+  const measRes = await fetch('https://wbsapi.withings.net/measure?action=getmeas&meastypes=1,6,8,76,77,88&category=1&startdate=' + startdate, {
     headers: { 'Authorization': `Bearer ${access_token}` }
   })
 
@@ -46,16 +46,6 @@ export async function GET(request) {
   }
 
   const groups = measData.body?.measuregrps || []
-
-  if (request.url.includes('debug=1')) {
-    if (request.url.includes('debug=2')) {
-  return Response.json({ all: groups.map(g => ({ date: new Date(g.date * 1000).toISOString().split('T')[0], measures: g.measures })) })
-}
-    const allTypes = groups.flatMap(g => g.measures.map(m => m.type))
-    const uniqueTypes = [...new Set(allTypes)]
-    return Response.json({ types: uniqueTypes, sample: groups[0] })
-  }
-
   let synced = 0
 
   for (const group of groups) {
@@ -65,8 +55,8 @@ export async function GET(request) {
     for (const m of group.measures) {
       const val = m.value * Math.pow(10, m.unit)
       if (m.type === 1) measures.poids = val
-      if (m.type === 6) measures.masse_grasse_pct = val
-      if (m.type === 8) measures.masse_hydrique_pct = val
+      if (m.type === 6) measures.masse_grasse = val
+      if (m.type === 8) measures.masse_hydrique = val
       if (m.type === 76) measures.masse_musculaire = val
       if (m.type === 77) measures.masse_maigre = val
       if (m.type === 88) measures.masse_osseuse = val
@@ -79,25 +69,23 @@ export async function GET(request) {
       )
     }
 
-    const compFields = ['masse_grasse_pct', 'masse_hydrique_pct', 'masse_musculaire', 'masse_maigre', 'masse_osseuse', 'graisse_viscerale']
+    const compFields = ['masse_grasse', 'masse_hydrique', 'masse_musculaire', 'masse_maigre', 'masse_osseuse']
     if (compFields.some(f => measures[f] !== undefined)) {
       const { data: existing } = await supabase.from('composition').select('*').eq('date', date).single()
+      const poids = measures.poids || 82.3
 
-      const poids = measures.poids || existing?.poids_ref || 82.3
-      const masse_grasse_pct = measures.masse_grasse_pct ?? existing?.masse_grasse_pct ?? 0
-      const masse_hydrique_pct = measures.masse_hydrique_pct ?? existing?.masse_hydrique_pct ?? 0
-      const masse_musculaire = measures.masse_musculaire ?? existing?.masse_musculaire ?? 0
-      const masse_musculaire_pct = poids > 0 ? Math.round((masse_musculaire / poids) * 1000) / 10 : 0
+      const masse_grasse = Math.round(((measures.masse_grasse ?? existing?.masse_grasse) || 0) * 10) / 10
+      const masse_musculaire = Math.round(((measures.masse_musculaire ?? existing?.masse_musculaire) || 0) * 10) / 10
+      const masse_hydrique = Math.round(((measures.masse_hydrique ?? existing?.masse_hydrique) || 0) * 10) / 10
 
       const updated = {
         date,
-        masse_grasse_pct: Math.round(masse_grasse_pct * 10) / 10,
-        masse_grasse: Math.round((poids * masse_grasse_pct / 100) * 10) / 10,
-        masse_hydrique_pct: Math.round(masse_hydrique_pct * 10) / 10,
-        masse_hydrique: Math.round((poids * masse_hydrique_pct / 100) * 10) / 10,
-        masse_musculaire: Math.round(masse_musculaire * 10) / 10,
-        masse_musculaire_pct,
-        graisse_viscerale: Math.round(((measures.graisse_viscerale ?? existing?.graisse_viscerale) || 0) * 10) / 10,
+        masse_grasse,
+        masse_grasse_pct: poids > 0 ? Math.round(masse_grasse / poids * 1000) / 10 : 0,
+        masse_musculaire,
+        masse_musculaire_pct: poids > 0 ? Math.round(masse_musculaire / poids * 1000) / 10 : 0,
+        masse_hydrique,
+        masse_hydrique_pct: poids > 0 ? Math.round(masse_hydrique / poids * 1000) / 10 : 0,
         masse_maigre: Math.round(((measures.masse_maigre ?? existing?.masse_maigre) || 0) * 10) / 10,
         masse_osseuse: Math.round(((measures.masse_osseuse ?? existing?.masse_osseuse) || 0) * 10) / 10,
       }
