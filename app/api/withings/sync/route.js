@@ -50,6 +50,11 @@ export async function GET() {
 
   const groups = measData.body?.measuregrps || []
   let synced = 0
+  if (request.url.includes('debug=1')) {
+  const allTypes = groups.flatMap(g => g.measures.map(m => m.type))
+  const uniqueTypes = [...new Set(allTypes)]
+  return Response.json({ types: uniqueTypes, sample: groups[0] })
+}
 
   for (const group of groups) {
     const date = new Date(group.date * 1000).toISOString().split('T')[0]
