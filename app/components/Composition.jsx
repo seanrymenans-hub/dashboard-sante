@@ -14,7 +14,7 @@ export default function Composition({ composition, onRefresh }) {
   const [succes, setSucces] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
-  const derniere = composition?.[0]
+  const derniere = composition?.sort((a, b) => new Date(b.date) - new Date(a.date))?.[0]
 
   async function ajouter() {
     setLoading(true)
