@@ -19,7 +19,7 @@ const FOOD_DB = {
   'yaourt': { kcal: 61, p: 3.5, c: 4.7, f: 3.3 },
 }
 
-export default function Nutrition({ repas, onRefresh }) {
+export default function Nutrition({ repas, onRefresh, objectifs }) {
   const [nom, setNom] = useState('')
   const [qty, setQty] = useState(100)
   const [type, setType] = useState('dejeuner')
