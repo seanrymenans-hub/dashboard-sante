@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import MetricsBar from './components/MetricsBar'
 import LoggerPoids from './components/LoggerPoids'
 import GraphiquePoids from './components/GraphiquePoids'
+import GraphiqueCalories from './components/GraphiqueCalories'
 import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 
@@ -47,7 +48,10 @@ export default function Home() {
 
         <MetricsBar poids={poids} repas={repas} seances={seances} />
         <LoggerPoids poids={poids} onRefresh={fetchData} />
-        <GraphiquePoids poids={poids} />
+        <div className="grid grid-cols-2 gap-6">
+          <GraphiquePoids poids={poids} />
+          <GraphiqueCalories repas={repas} seances={seances} />
+        </div>
         <Nutrition repas={repas} onRefresh={fetchData} />
         <Sport seances={seances} onRefresh={fetchData} />
       </div>
