@@ -76,7 +76,7 @@ export async function GET(request) {
     }
 
     const compFields = ['masse_grasse', 'masse_hydrique', 'masse_musculaire', 'masse_maigre', 'masse_osseuse', 'graisse_viscerale']
-    if (compFields.some(f => measures[f])) {
+if (compFields.some(f => measures[f] !== undefined)) {
       await supabase.from('composition').upsert({
         date,
         masse_grasse: Math.round((measures.masse_grasse || 0) * 10) / 10,
