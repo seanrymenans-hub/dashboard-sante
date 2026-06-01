@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import GraphiqueComposition from './GraphiqueComposition'
 
 export default function Composition({ composition, onRefresh }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -13,6 +14,7 @@ export default function Composition({ composition, onRefresh }) {
   const [loading, setLoading] = useState(false)
   const [succes, setSucces] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [showGraphique, setShowGraphique] = useState(false)
 
   const derniere = composition?.sort((a, b) => new Date(b.date) - new Date(a.date))?.[0]
 
@@ -35,9 +37,9 @@ export default function Composition({ composition, onRefresh }) {
   }
 
   const metrics = [
-    { label: 'Masse grasse', val: derniere?.masse_grasse, unit: 'kg', color: '#EF9F27', prev: composition?.[1]?.masse_grasse },
-    { label: 'Masse musculaire', val: derniere?.masse_musculaire, unit: 'kg', color: '#1D9E75', prev: composition?.[1]?.masse_musculaire },
-    { label: 'Masse hydrique', val: derniere?.masse_hydrique, unit: 'kg', color: '#378ADD', prev: composition?.[1]?.masse_hydrique },
+    { label: 'Masse grasse', val: derniere?.masse_grasse, pct: derniere?.masse_grasse_pct, unit: 'kg', color: '#EF9F27', prev: composition?.[1]?.masse_grasse },
+    { label: 'Masse musculaire', val: derniere?.masse_musculaire, pct: derniere?.masse_musculaire_pct, unit: 'kg', color: '#1D9E75', prev: composition?.[1]?.masse_musculaire },
+    { label: 'Masse hydrique', val: derniere?.masse_hydrique, pct: derniere?.masse_hydrique_pct, unit: 'kg', color: '#378ADD', prev: composition?.[1]?.masse_hydrique },
     { label: 'Graisse viscérale', val: derniere?.graisse_viscerale, unit: '', color: '#D85A30', prev: composition?.[1]?.graisse_viscerale },
     { label: 'Masse maigre', val: derniere?.masse_maigre, unit: 'kg', color: '#534AB7', prev: composition?.[1]?.masse_maigre },
     { label: 'Masse osseuse', val: derniere?.masse_osseuse, unit: 'kg', color: '#888780', prev: composition?.[1]?.masse_osseuse },
@@ -52,12 +54,20 @@ export default function Composition({ composition, onRefresh }) {
             {derniere ? `Dernière mesure : ${new Date(derniere.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : 'Aucune mesure encore'}
           </div>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className={`text-sm px-4 py-1.5 rounded-lg border transition-all ${succes ? 'bg-green-500 text-white border-green-500' : 'border-gray-200'}`}
-        >
-          {succes ? '✓ Ajouté !' : showForm ? 'Annuler' : '+ Mesure'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowGraphique(!showGraphique)}
+            className="text-sm border border-gray-200 rounded-lg px-4 py-1.5"
+          >
+            {showGraphique ? 'Masquer' : '📈 Évolution'}
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className={`text-sm px-4 py-1.5 rounded-lg border transition-all ${succes ? 'bg-green-500 text-white border-green-500' : 'border-gray-200'}`}
+          >
+            {succes ? '✓ Ajouté !' : showForm ? 'Annuler' : '+ Mesure'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
@@ -69,6 +79,9 @@ export default function Composition({ composition, onRefresh }) {
               <div className="text-lg font-medium" style={{ color: m.val ? m.color : '#ccc' }}>
                 {m.val ? `${m.val} ${m.unit}` : '—'}
               </div>
+              {m.pct && (
+                <div className="text-xs text-gray-400 mt-0.5">{m.pct}%</div>
+              )}
               {diff && (
                 <div className={`text-xs mt-1 ${parseFloat(diff) <= 0 ? 'text-green-600' : 'text-red-500'}`}>
                   {parseFloat(diff) > 0 ? '+' : ''}{diff} {m.unit}
@@ -78,6 +91,12 @@ export default function Composition({ composition, onRefresh }) {
           )
         })}
       </div>
+
+      {showGraphique && (
+        <div className="border-t border-gray-50 pt-4">
+          <GraphiqueComposition composition={composition} />
+        </div>
+      )}
 
       {showForm && (
         <div className="border-t border-gray-50 pt-4">

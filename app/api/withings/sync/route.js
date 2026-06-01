@@ -41,7 +41,6 @@ export async function GET(request) {
   })
 
   const measData = await measRes.json()
-
   if (measData.status !== 0) {
     return Response.json({ error: 'Erreur Withings', details: measData }, { status: 400 })
   }
@@ -63,26 +62,39 @@ export async function GET(request) {
     for (const m of group.measures) {
       const val = m.value * Math.pow(10, m.unit)
       if (m.type === 1) measures.poids = val
-      if (m.type === 6) measures.masse_grasse = val
-      if (m.type === 8) measures.masse_hydrique = val
-      if (m.type === 11) measures.graisse_viscerale = val
+      if (m.type === 6) measures.masse_grasse_pct = val
+      if (m.type === 8) measures.masse_hydrique_pct = val
+      if (m.type === 11) measures.graisse_viscerale = val / 10
       if (m.type === 76) measures.masse_musculaire = val
       if (m.type === 77) measures.masse_maigre = val
       if (m.type === 88) measures.masse_osseuse = val
     }
 
     if (measures.poids) {
-      await supabase.from('poids').upsert({ date, valeur: Math.round(measures.poids * 10) / 10 }, { onConflict: 'date' })
+      await supabase.from('poids').upsert(
+        { date, valeur: Math.round(measures.poids * 10) / 10 },
+        { onConflict: 'date' }
+      )
     }
 
-    const compFields = ['masse_grasse', 'masse_hydrique', 'masse_musculaire', 'masse_maigre', 'masse_osseuse', 'graisse_viscerale']
+    const compFields = ['masse_grasse_pct', 'masse_hydrique_pct', 'masse_musculaire', 'masse_maigre', 'masse_osseuse', 'graisse_viscerale']
     if (compFields.some(f => measures[f] !== undefined)) {
       const { data: existing } = await supabase.from('composition').select('*').eq('date', date).single()
+
+      const poids = measures.poids || existing?.poids_ref || 82.3
+      const masse_grasse_pct = measures.masse_grasse_pct ?? existing?.masse_grasse_pct ?? 0
+      const masse_hydrique_pct = measures.masse_hydrique_pct ?? existing?.masse_hydrique_pct ?? 0
+      const masse_musculaire = measures.masse_musculaire ?? existing?.masse_musculaire ?? 0
+      const masse_musculaire_pct = poids > 0 ? Math.round((masse_musculaire / poids) * 1000) / 10 : 0
+
       const updated = {
         date,
-        masse_grasse: Math.round(((measures.masse_grasse ?? existing?.masse_grasse) || 0) * 10) / 10,
-        masse_musculaire: Math.round(((measures.masse_musculaire ?? existing?.masse_musculaire) || 0) * 10) / 10,
-        masse_hydrique: Math.round(((measures.masse_hydrique ?? existing?.masse_hydrique) || 0) * 10) / 10,
+        masse_grasse_pct: Math.round(masse_grasse_pct * 10) / 10,
+        masse_grasse: Math.round((poids * masse_grasse_pct / 100) * 10) / 10,
+        masse_hydrique_pct: Math.round(masse_hydrique_pct * 10) / 10,
+        masse_hydrique: Math.round((poids * masse_hydrique_pct / 100) * 10) / 10,
+        masse_musculaire: Math.round(masse_musculaire * 10) / 10,
+        masse_musculaire_pct,
         graisse_viscerale: Math.round(((measures.graisse_viscerale ?? existing?.graisse_viscerale) || 0) * 10) / 10,
         masse_maigre: Math.round(((measures.masse_maigre ?? existing?.masse_maigre) || 0) * 10) / 10,
         masse_osseuse: Math.round(((measures.masse_osseuse ?? existing?.masse_osseuse) || 0) * 10) / 10,
