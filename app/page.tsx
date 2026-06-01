@@ -7,6 +7,7 @@ import GraphiquePoids from './components/GraphiquePoids'
 import GraphiqueCalories from './components/GraphiqueCalories'
 import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
+import SuggestionSeance from './components/SuggestionSeance'
 
 export default function Home() {
   const [poids, setPoids] = useState([])
@@ -52,6 +53,7 @@ export default function Home() {
           <GraphiquePoids poids={poids} />
           <GraphiqueCalories repas={repas} seances={seances} />
         </div>
+        <SuggestionSeance seances={seances} repas={repas} poids={poids} />
         <Nutrition repas={repas} onRefresh={fetchData} />
         <Sport seances={seances} onRefresh={fetchData} />
       </div>
