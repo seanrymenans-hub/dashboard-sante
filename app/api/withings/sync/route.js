@@ -55,10 +55,9 @@ export async function GET(request) {
     for (const m of group.measures) {
       const val = m.value * Math.pow(10, m.unit)
       if (m.type === 1) measures.poids = val
-      if (m.type === 6) measures.masse_grasse = val
-      if (m.type === 8) measures.masse_hydrique = val
+      if (m.type === 6) measures.masse_grasse_pct = val
       if (m.type === 76) measures.masse_musculaire = val
-      if (m.type === 77) measures.masse_maigre = val
+      if (m.type === 77) measures.masse_hydrique = val
       if (m.type === 88) measures.masse_osseuse = val
     }
 
@@ -69,25 +68,31 @@ export async function GET(request) {
       )
     }
 
-    const compFields = ['masse_grasse', 'masse_hydrique', 'masse_musculaire', 'masse_maigre', 'masse_osseuse']
+    const compFields = ['masse_grasse_pct', 'masse_musculaire', 'masse_hydrique', 'masse_osseuse']
     if (compFields.some(f => measures[f] !== undefined)) {
       const { data: existing } = await supabase.from('composition').select('*').eq('date', date).single()
       const poids = measures.poids || 82.3
 
-      const masse_grasse = Math.round(((measures.masse_grasse ?? existing?.masse_grasse) || 0) * 10) / 10
-      const masse_musculaire = Math.round(((measures.masse_musculaire ?? existing?.masse_musculaire) || 0) * 10) / 10
-      const masse_hydrique = Math.round(((measures.masse_hydrique ?? existing?.masse_hydrique) || 0) * 10) / 10
+      const masse_grasse_pct = measures.masse_grasse_pct ?? existing?.masse_grasse_pct ?? 0
+      const masse_musculaire = measures.masse_musculaire ?? existing?.masse_musculaire ?? 0
+      const masse_hydrique = measures.masse_hydrique ?? existing?.masse_hydrique ?? 0
+      const masse_osseuse = measures.masse_osseuse ?? existing?.masse_osseuse ?? 0
+
+      const masse_grasse = Math.round(poids * masse_grasse_pct / 100 * 10) / 10
+      const masse_maigre = Math.round((poids - masse_grasse) * 10) / 10
+      const masse_musculaire_pct = poids > 0 ? Math.round(masse_musculaire / poids * 1000) / 10 : 0
+      const masse_hydrique_pct = poids > 0 ? Math.round(masse_hydrique / poids * 1000) / 10 : 0
 
       const updated = {
         date,
         masse_grasse,
-        masse_grasse_pct: poids > 0 ? Math.round(masse_grasse / poids * 1000) / 10 : 0,
-        masse_musculaire,
-        masse_musculaire_pct: poids > 0 ? Math.round(masse_musculaire / poids * 1000) / 10 : 0,
-        masse_hydrique,
-        masse_hydrique_pct: poids > 0 ? Math.round(masse_hydrique / poids * 1000) / 10 : 0,
-        masse_maigre: Math.round(((measures.masse_maigre ?? existing?.masse_maigre) || 0) * 10) / 10,
-        masse_osseuse: Math.round(((measures.masse_osseuse ?? existing?.masse_osseuse) || 0) * 10) / 10,
+        masse_grasse_pct: Math.round(masse_grasse_pct * 10) / 10,
+        masse_musculaire: Math.round(masse_musculaire * 10) / 10,
+        masse_musculaire_pct,
+        masse_hydrique: Math.round(masse_hydrique * 10) / 10,
+        masse_hydrique_pct,
+        masse_maigre,
+        masse_osseuse: Math.round(masse_osseuse * 10) / 10,
       }
       await supabase.from('composition').upsert(updated, { onConflict: 'date' })
       synced++
