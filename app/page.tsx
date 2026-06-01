@@ -133,7 +133,7 @@ export default function Home() {
         {onglet === 'sport' && (
           <div>
             <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
-            <Sport seances={seances} onRefresh={fetchData} />
+            <Sport seances={seances} onRefresh={fetchData} poids={poids} />
           </div>
         )}
 
