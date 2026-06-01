@@ -1,17 +1,18 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import Navigation from './components/Navigation'
+import WithingsSync from './components/WithingsSync'
 import MetricsBar from './components/MetricsBar'
 import LoggerPoids from './components/LoggerPoids'
 import GraphiquePoids from './components/GraphiquePoids'
 import GraphiqueCalories from './components/GraphiqueCalories'
+import Composition from './components/Composition'
 import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import SuggestionRepas from './components/SuggestionRepas'
 import Parametres from './components/Parametres'
-import Composition from './components/Composition'
-import WithingsSync from './components/WithingsSync'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -21,6 +22,7 @@ export default function Home() {
   const [composition, setComposition] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
+  const [onglet, setOnglet] = useState('accueil')
 
   const fetchData = useCallback(async () => {
     const [p, r, s, o, c] = await Promise.all([
@@ -46,36 +48,88 @@ export default function Home() {
     </div>
   )
 
+  const dernierPoids = poids?.[0]?.valeur || 0
+  const objectifPoids = objectifs?.poids_objectif || 70
+  const poidsDepart = objectifs?.poids_depart || 89.3
+  const progression = Math.max(0, Math.round(((poidsDepart - dernierPoids) / (poidsDepart - objectifPoids)) * 100))
+  const today = new Date().toISOString().split('T')[0]
+  const kcalAujourdhui = repas.filter(r => r.date === today).reduce((s, r) => s + r.kcal, 0)
+  const kcalObj = objectifs?.kcal_journalier || 1850
+  const semaines = Math.ceil((dernierPoids - objectifPoids) / 0.5)
+  const dateObjectif = new Date()
+  dateObjectif.setDate(dateObjectif.getDate() + semaines * 7)
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-medium">Dashboard santé</h1>
             <p className="text-sm text-gray-400 mt-1">
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
-          <button
-            onClick={() => setShowParametres(true)}
-            className="text-sm border border-gray-200 rounded-lg px-4 py-2"
-          >
+          <button onClick={() => setShowParametres(true)} className="text-sm border border-gray-200 rounded-lg px-4 py-2">
             ⚙️ Paramètres
           </button>
         </div>
 
-        <WithingsSync onRefresh={fetchData} />
-        <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
-        <Composition composition={composition} onRefresh={fetchData} />
-        <LoggerPoids poids={poids} onRefresh={fetchData} />
-        <div className="grid grid-cols-2 gap-6">
-          <GraphiquePoids poids={poids} objectifs={objectifs} />
-          <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
-        </div>
-        <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
-        <SuggestionRepas repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
-        <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
-        <Sport seances={seances} onRefresh={fetchData} />
+        <Navigation ongletActif={onglet} setOnglet={setOnglet} />
+
+        {onglet === 'accueil' && (
+          <div>
+            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
+            <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
+              <div className="font-medium mb-4">Progression vers l'objectif</div>
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Poids · {poidsDepart} → {objectifPoids} kg</span>
+                  <span className="font-medium">{progression}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded">
+                  <div className="h-2 bg-green-500 rounded transition-all" style={{ width: progression + '%' }} />
+                </div>
+                <div className="text-xs text-gray-400 mt-1">{(poidsDepart - dernierPoids).toFixed(1)} kg perdus · {(dernierPoids - objectifPoids).toFixed(1)} kg restants</div>
+              </div>
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-500">Calories aujourd'hui</span>
+                  <span className="font-medium">{kcalAujourdhui} / {kcalObj} kcal</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded">
+                  <div className="h-2 bg-blue-400 rounded transition-all" style={{ width: Math.min(100, Math.round(kcalAujourdhui / kcalObj * 100)) + '%' }} />
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
+                🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{dateObjectif.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {onglet === 'corps' && (
+          <div>
+            <WithingsSync onRefresh={fetchData} />
+            <Composition composition={composition} onRefresh={fetchData} />
+            <LoggerPoids poids={poids} onRefresh={fetchData} />
+            <GraphiquePoids poids={poids} objectifs={objectifs} />
+          </div>
+        )}
+
+        {onglet === 'nutrition' && (
+          <div>
+            <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
+            <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
+            <SuggestionRepas repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
+          </div>
+        )}
+
+        {onglet === 'sport' && (
+          <div>
+            <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
+            <Sport seances={seances} onRefresh={fetchData} />
+          </div>
+        )}
 
         {showParametres && (
           <Parametres
