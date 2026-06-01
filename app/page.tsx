@@ -9,26 +9,30 @@ import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import Parametres from './components/Parametres'
+import Composition from './components/Composition'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
   const [repas, setRepas] = useState<any[]>([])
   const [seances, setSeances] = useState<any[]>([])
   const [objectifs, setObjectifs] = useState<any>(null)
+  const [composition, setComposition] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
 
   const fetchData = useCallback(async () => {
-    const [p, r, s, o] = await Promise.all([
+    const [p, r, s, o, c] = await Promise.all([
       supabase.from('poids').select('*').order('date', { ascending: false }),
       supabase.from('repas').select('*').order('date', { ascending: false }),
       supabase.from('seances').select('*').order('date', { ascending: false }),
       supabase.from('objectifs').select('*').limit(1).single(),
+      supabase.from('composition').select('*').order('date', { ascending: false }),
     ])
     setPoids(p.data || [])
     setRepas(r.data || [])
     setSeances(s.data || [])
     setObjectifs(o.data || null)
+    setComposition(c.data || [])
     setLoading(false)
   }, [])
 
@@ -59,12 +63,13 @@ export default function Home() {
         </div>
 
         <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
+        <Composition composition={composition} onRefresh={fetchData} />
         <LoggerPoids poids={poids} onRefresh={fetchData} />
         <div className="grid grid-cols-2 gap-6">
           <GraphiquePoids poids={poids} objectifs={objectifs} />
           <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
         </div>
-        <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} />
+        <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
         <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
         <Sport seances={seances} onRefresh={fetchData} />
 
