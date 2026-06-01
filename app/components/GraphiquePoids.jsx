@@ -1,7 +1,7 @@
 'use client'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 
-export default function GraphiquePoids({ poids }) {
+export default function GraphiquePoids({ poids, objectifs }) {
   const data = [...(poids || [])].reverse().map(p => ({
     date: new Date(p.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
     poids: parseFloat(p.valeur)
@@ -28,7 +28,7 @@ export default function GraphiquePoids({ poids }) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
             <YAxis domain={['auto', 'auto']} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={v => v + ' kg'} />
             <Tooltip formatter={v => [v + ' kg', 'Poids']} />
-            <ReferenceLine y={78} stroke="#9FE1CB" strokeDasharray="4 4" label={{ value: 'objectif', fontSize: 11, fill: '#1D9E75' }} />
+            <ReferenceLine y={objectifs?.poids_objectif || 70} stroke="#9FE1CB" strokeDasharray="4 4" label={{ value: 'objectif', fontSize: 11, fill: '#1D9E75' }} />
             <Line type="monotone" dataKey="poids" stroke="#1D9E75" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>

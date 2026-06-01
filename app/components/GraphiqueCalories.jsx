@@ -1,7 +1,7 @@
 'use client'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts'
 
-export default function GraphiqueCalories({ repas, seances }) {
+export default function GraphiqueCalories({ repas, seances, objectifs }) {
   const jours = []
   for (let i = 6; i >= 0; i--) {
     const date = new Date()
@@ -45,8 +45,7 @@ export default function GraphiqueCalories({ repas, seances }) {
           <Tooltip
             formatter={(val, name) => [val + ' kcal', name === 'consommees' ? 'Consommées' : 'Brûlées']}
           />
-          <ReferenceLine y={2000} stroke="#EF9F27" strokeDasharray="4 4" label={{ value: 'objectif', fontSize: 10, fill: '#BA7517' }} />
-          <Bar dataKey="consommees" fill="#B5D4F4" radius={[4, 4, 0, 0]} />
+          <ReferenceLine y={objectifs?.kcal_journalier || 1850} stroke="#EF9F27" strokeDasharray="4 4" label={{ value: 'objectif', fontSize: 10, fill: '#BA7517' }} />
           <Bar dataKey="brulees" fill="#9FE1CB" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
