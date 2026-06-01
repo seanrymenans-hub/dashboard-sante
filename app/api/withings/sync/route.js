@@ -46,6 +46,12 @@ export async function GET(request) {
   }
 
   const groups = measData.body?.measuregrps || []
+
+  if (request.url.includes('debug=1')) {
+    const allTypes = [...new Set(groups.flatMap(g => g.measures.map(m => ({ type: m.type, val: m.value * Math.pow(10, m.unit) }))))]
+    return Response.json({ types: allTypes, sample: groups.slice(0, 3) })
+  }
+
   let synced = 0
 
   for (const group of groups) {
