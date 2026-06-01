@@ -13,6 +13,7 @@ import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import SuggestionRepas from './components/SuggestionRepas'
 import CoachIA from './components/CoachIA'
+import Streak from './components/Streak'
 import Parametres from './components/Parametres'
 
 export default function Home() {
@@ -107,6 +108,7 @@ export default function Home() {
                 🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{dateObjectif.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
               </div>
             </div>
+            <Streak repas={repas} objectifs={objectifs} />
             <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>
         )}
