@@ -62,17 +62,10 @@ export async function GET(request) {
     for (const m of group.measures) {
       const val = m.value * Math.pow(10, m.unit)
       if (m.type === 1) measures.poids = val
-      if (m.type === 5) measures.masse_grasse_libre = val
       if (m.type === 6) measures.masse_grasse_pct = val
-      if (m.type === 8) measures.type8 = val
-      if (m.type === 71) measures.type71 = val
-      if (m.type === 73) measures.type73 = val
       if (m.type === 76) measures.masse_musculaire = val
       if (m.type === 77) measures.masse_hydrique = val
       if (m.type === 88) measures.masse_osseuse = val
-      if (m.type === 174) measures.type174 = val
-      if (m.type === 175) measures.type175 = val
-      if (m.type === 176) measures.type176 = val
     }
 
     if (measures.poids) {
@@ -91,9 +84,7 @@ export async function GET(request) {
       const masse_musculaire = measures.masse_musculaire ?? existing?.masse_musculaire ?? 0
       const masse_hydrique = measures.masse_hydrique ?? existing?.masse_hydrique ?? 0
       const masse_osseuse = measures.masse_osseuse ?? existing?.masse_osseuse ?? 0
-      const masse_grasse = measures.masse_grasse_libre
-        ? Math.round(measures.masse_grasse_libre * 10) / 10
-        : Math.round(poids * masse_grasse_pct / 100 * 10) / 10
+      const masse_grasse = Math.round(poids * masse_grasse_pct / 100 * 10) / 10
       const masse_maigre = Math.round((poids - masse_grasse) * 10) / 10
       const masse_musculaire_pct = poids > 0 ? Math.round(masse_musculaire / poids * 1000) / 10 : 0
       const masse_hydrique_pct = poids > 0 ? Math.round(masse_hydrique / poids * 1000) / 10 : 0
