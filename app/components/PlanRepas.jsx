@@ -36,7 +36,8 @@ export default function PlanRepas({ objectifs, poids, composition }) {
 
   async function fetchPlan() {
     setLoading(true)
-    const { data } = await supabase.from('meal_plans').select('*').eq('semaine', semaine).maybeSingle()
+    const { data, error } = await supabase.from('meal_plans').select('*').eq('semaine', semaine).maybeSingle()
+    if (error) console.error('fetchPlan error:', error)
     if (data) setPlan(data)
     setLoading(false)
   }
