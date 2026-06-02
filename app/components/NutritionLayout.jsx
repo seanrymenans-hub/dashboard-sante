@@ -4,10 +4,12 @@ import NutritionAujourdhui from './NutritionAujourdhui'
 import NutritionSuggestions from './NutritionSuggestions'
 import Hydratation from './Hydratation'
 import NutritionAnalyse from './NutritionAnalyse'
+import PlanRepas from './PlanRepas'
 
 const TABS = [
   { id: 'aujourdhui', label: "Aujourd'hui", emoji: '🍎' },
   { id: 'suggestions', label: 'Suggestions', emoji: '🤖' },
+  { id: 'plan', label: 'Plan semaine', emoji: '📅' },
   { id: 'hydratation', label: 'Hydratation', emoji: '💧' },
   { id: 'analyse', label: 'Analyse', emoji: '📈' },
 ]
@@ -39,6 +41,9 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
       )}
       {tab === 'suggestions' && (
         <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
+      )}
+      {tab === 'plan' && (
+        <PlanRepas objectifs={objectifs} poids={poids} composition={composition} />
       )}
       {tab === 'hydratation' && (
         <Hydratation poids={poids} />

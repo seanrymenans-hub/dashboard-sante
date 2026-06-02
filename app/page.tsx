@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import Navigation from './components/Navigation'
 import WithingsSync from './components/WithingsSync'
 import MetricsBar from './components/MetricsBar'
-import LoggerPoids from './components/LoggerPoids'
 import GraphiquePoids from './components/GraphiquePoids'
 import Composition from './components/Composition'
 import Sport from './components/Sport'
@@ -114,7 +113,6 @@ export default function Home() {
           <div>
             <WithingsSync onRefresh={fetchData} />
             <Composition composition={composition} onRefresh={fetchData} />
-            <LoggerPoids poids={poids} onRefresh={fetchData} />
             <GraphiquePoids poids={poids} objectifs={objectifs} />
           </div>
         )}

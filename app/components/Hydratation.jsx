@@ -25,7 +25,7 @@ export default function Hydratation({ poids }) {
   useEffect(() => { fetchHydratation() }, [])
 
   async function fetchHydratation() {
-    const { data } = await supabase.from('hydratation').select('*').eq('date', today).single()
+    const { data } = await supabase.from('hydratation').select('*').eq('date', today).maybeSingle()
     if (data) setMl(data.verres)
   }
 
