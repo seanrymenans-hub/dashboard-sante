@@ -15,6 +15,7 @@ import SuggestionRepas from './components/SuggestionRepas'
 import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
+import Hydratation from './components/Hydratation'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -124,6 +125,7 @@ export default function Home() {
 
         {onglet === 'nutrition' && (
           <div>
+            <Hydratation poids={poids} />
             <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
             <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
             <SuggestionRepas repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
