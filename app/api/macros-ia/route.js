@@ -7,7 +7,7 @@ export async function POST(request) {
     const tmb = objectifs?.tmb || 1875
     const today = new Date().toISOString().split('T')[0]
 
-    // Calories brûlées aujourd'hui
+    // 1. Calories brûlées aujourd'hui (Sport)
     const kcalBruléesAujourdhui = seances
       ? seances.filter(s => s.date === today).reduce((s, r) => s + (r.kcal || 0), 0)
       : 0
@@ -24,42 +24,57 @@ export async function POST(request) {
       ? Math.round(seances7j.reduce((s, r) => s + (r.kcal || 0), 0) / 7)
       : 0
 
+    // 2. CE QUE TU AS DÉJÀ MANGÉ AUJOURD'HUI (La nouveauté !)
+    const repasAujourdhui = repas ? repas.filter(r => r.date === today) : []
+    const dejaConsomme = {
+      kcal: repasAujourdhui.reduce((s, r) => s + (r.kcal || 0), 0),
+      proteines: repasAujourdhui.reduce((s, r) => s + (r.proteines || r.macros?.proteines || 0), 0),
+      glucides: repasAujourdhui.reduce((s, r) => s + (r.glucides || r.macros?.glucides || 0), 0),
+      lipides: repasAujourdhui.reduce((s, r) => s + (r.lipides || r.macros?.lipides || 0), 0),
+    }
+
     // Composition corporelle
     const derniereCompo = composition?.[0]
     const masseMusculaire = derniereCompo?.masse_musculaire || 60
 
-    const prompt = `Tu es un nutritionniste expert en perte de poids rapide et préservation musculaire. Calcule les macros optimales pour aujourd'hui.
+    // prompt mis à jour pour inclure le contexte de ce que tu as mangé !
+    const prompt = `Tu es un nutritionniste expert en perte de poids rapide et préservation musculaire. Calcule les macros cibles RESTANTES ou AJUSTÉES pour le reste de la journée.
 
 PROFIL :
 - Poids actuel : ${poidsActuel} kg
-- Objectif : ${objectifPoids} kg (perte de poids la plus rapide possible sans danger)
+- Objectif final : ${objectifPoids} kg (perte de poids rapide et sûre)
 - TMB : ${tmb} kcal
 - Masse musculaire : ${masseMusculaire} kg
 
-ACTIVITÉ D'AUJOURD'HUI :
+ACTIVITÉ ET SPORT :
 - Calories brûlées sport aujourd'hui : ${kcalBruléesAujourdhui} kcal
 - Moyenne calories sport/jour (7j) : ${kcalSportMoyenne} kcal
 
-RÈGLES STRICTES :
-- Déficit maximum : 750 kcal/jour (sécurité)
-- Protéines : minimum 2g par kg de masse musculaire pour préserver le muscle
-- Si sport aujourd'hui : augmenter légèrement les glucides pour la récupération
-- Calories minimum absolues : 1200 kcal/jour
+CE QUI A DÉJÀ ÉTÉ MANGÉ AUJOURD'HUI :
+- Calories consommées : ${dejaConsomme.kcal} kcal
+- Protéines consommées : ${dejaConsomme.proteines}g
+- Glucides consommés : ${dejaConsomme.glucides}g
+- Lipides consommés : ${dejaConsomme.lipides}g
 
-Calcule les macros idéales pour aujourd'hui et explique pourquoi.
+RÈGLES STRICTES :
+- Déficit maximum : 750 kcal/jour par rapport aux dépenses totales (TMB + Sport)
+- Protéines totales de la journée : minimum 2g par kg de masse musculaire.
+- Calories minimum absolues sur la journée : 1200 kcal.
+- Analyse ce qui a déjà été mangé. Si l'utilisateur a déjà dépassé ou est proche d'un quota (ex: trop de lipides), ajuste les macros restantes pour compenser et rééquilibrer la journée.
+
+Calcule les macros cibles TOTALES idéales pour cette journée (en prenant en compte cette situation) et explique ton ajustement.
 
 Réponds UNIQUEMENT en JSON valide sans markdown :
 {
-  "kcal": <ta_valeur_calculée>,
-  "proteines": <ta_valeur_calculée>,
-  "glucides": <ta_valeur_calculée>,
-  "lipides": <ta_valeur_calculée>,
-  "deficit": <ta_valeur_calculée>,
-  "message": "<message motivant personnalisé basé sur les données>",
-  "ajustement": "<explication pourquoi ces macros précises aujourd'hui>"
+  "kcal": <cible_totale_calories_journee>,
+  "proteines": <cible_totale_proteines_journee>,
+  "glucides": <cible_totale_glucides_journee>,
+  "lipides": <cible_totale_lipides_journee>,
+  "deficit": <deficit_anticipe_sur_la_journee>,
+  "message": "<message de coaching hyper personnalisé qui commente ce qu'il a mangé/fait comme sport aujourd'hui>",
+  "ajustement": "<explication de ton calcul mathématique d'adaptation face aux repas et au sport du jour>"
 }`
 
-    // Vérification de la clé API
     if (!process.env.GITHUB_TOKEN) {
       throw new Error("La variable GITHUB_TOKEN est manquante.");
     }
@@ -80,19 +95,13 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
       }
     )
 
-    console.log('GitHub API status:', response.status)
-
     const rawText = await response.text()
-    console.log('GitHub API response:', rawText)
-
     if (!response.ok) {
       throw new Error(`Erreur GitHub API (${response.status}): ${rawText}`)
     }
 
     const data = JSON.parse(rawText)
     const text = data.choices?.[0]?.message?.content || ''
-    
-    // Nettoyage au cas où le modèle met du markdown
     const clean = text.replace(/```json|```/g, '').trim()
     const result = JSON.parse(clean)
 
