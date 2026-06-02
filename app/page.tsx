@@ -11,7 +11,6 @@ import Composition from './components/Composition'
 import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
-import SuggestionRepas from './components/SuggestionRepas'
 import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
@@ -32,18 +31,27 @@ export default function Home() {
   const [macrosIA, setMacrosIA] = useState<any>(null)
 
   const fetchData = useCallback(async () => {
-    const [p, r, s, o, c] = await Promise.all([
+    const semaine = (() => {
+      const now = new Date()
+      const lundi = new Date(now)
+      lundi.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+      return lundi.toISOString().split('T')[0]
+    })()
+
+    const [p, r, s, o, c, m] = await Promise.all([
       supabase.from('poids').select('*').order('date', { ascending: false }),
       supabase.from('repas').select('*').order('date', { ascending: false }),
       supabase.from('seances').select('*').order('date', { ascending: false }),
       supabase.from('objectifs').select('*').limit(1).single(),
       supabase.from('composition').select('*').order('date', { ascending: false }),
+      supabase.from('macros_ia').select('*').eq('semaine', semaine).single(),
     ])
     setPoids(p.data || [])
     setRepas(r.data || [])
     setSeances(s.data || [])
     setObjectifs(o.data || null)
     setComposition(c.data || [])
+    setMacrosIA(m.data || null)
     setLoading(false)
   }, [])
 
