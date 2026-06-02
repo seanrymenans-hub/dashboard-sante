@@ -16,6 +16,9 @@ import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
 import Hydratation from './components/Hydratation'
+import GraphiqueMacros from './components/GraphiqueMacros'
+import MacrosIA from './components/MacrosIA'
+import NutritionLayout from './components/NutritionLayout'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -26,6 +29,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
+  const [macrosIA, setMacrosIA] = useState<any>(null)
 
   const fetchData = useCallback(async () => {
     const [p, r, s, o, c] = await Promise.all([
@@ -81,7 +85,7 @@ export default function Home() {
 
         {onglet === 'accueil' && (
           <div>
-            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
+            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal } : objectifs} />
             <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
               <div className="font-medium mb-4">Progression vers l'objectif</div>
               <div className="mb-4">
@@ -110,7 +114,7 @@ export default function Home() {
               </div>
             </div>
             <Streak repas={repas} objectifs={objectifs} />
-            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
+            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal, proteines_objectif: macrosIA.proteines, glucides_objectif: macrosIA.glucides, lipides_objectif: macrosIA.lipides } : objectifs} />
           </div>
         )}
 
@@ -124,17 +128,21 @@ export default function Home() {
         )}
 
         {onglet === 'nutrition' && (
-          <div>
-            <Hydratation poids={poids} />
-            <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
-            <Nutrition repas={repas} onRefresh={fetchData} objectifs={objectifs} />
-            <SuggestionRepas repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
-          </div>
+          <NutritionLayout
+            repas={repas}
+            objectifs={objectifs}
+            macrosIA={macrosIA}
+            onMacrosUpdate={setMacrosIA}
+            composition={composition}
+            poids={poids}
+            seances={seances}
+            onRefresh={fetchData}
+          />
         )}
 
         {onglet === 'sport' && (
           <div>
-            <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
+            <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal } : objectifs} composition={composition} />
             <Sport seances={seances} onRefresh={fetchData} poids={poids} />
           </div>
         )}

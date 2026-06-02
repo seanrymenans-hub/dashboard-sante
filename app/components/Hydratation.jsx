@@ -6,7 +6,6 @@ export default function Hydratation({ poids }) {
   const [ml, setMl] = useState(0)
   const [quantiteManuelle, setQuantiteManuelle] = useState('')
   const [loading, setLoading] = useState(false)
-  const [animate, setAnimate] = useState(false)
   const today = new Date().toISOString().split('T')[0]
 
   const poidsKg = poids?.[0]?.valeur || 82
@@ -32,8 +31,6 @@ export default function Hydratation({ poids }) {
 
   async function ajouter(quantite) {
     setLoading(true)
-    setAnimate(true)
-    setTimeout(() => setAnimate(false), 600)
     const newMl = ml + quantite
     await supabase.from('hydratation').upsert(
       { date: today, verres: newMl },
@@ -50,239 +47,106 @@ export default function Hydratation({ poids }) {
   }
 
   const getMessage = () => {
-    if (progression === 0) return 'Commence ta journée avec un grand verre d\'eau 💧'
-    if (progression < 25) return 'Bon début, continue comme ça !'
+    if (progression === 0) return "Commence ta journée avec un grand verre d'eau 💧"
+    if (progression < 25) return 'Bon début, continue !'
     if (progression < 50) return 'Tu es sur la bonne voie 👍'
-    if (progression < 75) return 'Plus que la moitié, tu y es presque !'
-    if (progression < 100) return 'Encore un peu et c\'est dans la poche 💪'
-    return '🎉 Objectif atteint ! Excellent travail !'
+    if (progression < 75) return 'Plus que la moitié !'
+    if (progression < 100) return 'Encore un peu 💪'
+    return '🎉 Objectif atteint !'
   }
 
+  const couleurBarre = progression >= 100 ? 'bg-green-400' : 'bg-blue-400'
+
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #0a1f35 100%)',
-      borderRadius: '20px',
-      padding: '28px',
-      marginBottom: '24px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Bulles décoratives */}
-      {[...Array(6)].map((_, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          borderRadius: '50%',
-          background: 'rgba(56, 189, 248, 0.06)',
-          width: `${[60, 40, 80, 30, 50, 70][i]}px`,
-          height: `${[60, 40, 80, 30, 50, 70][i]}px`,
-          top: `${[10, 60, 20, 70, 40, 5][i]}%`,
-          left: `${[80, 90, 70, 85, 95, 75][i]}%`,
-          animation: `float${i} ${[4, 6, 5, 7, 4.5, 6.5][i]}s ease-in-out infinite`,
-        }} />
-      ))}
-
-      <style>{`
-        @keyframes wave1 {
-          0%, 100% { transform: translateX(0) translateY(0); }
-          50% { transform: translateX(-25px) translateY(-5px); }
-        }
-        @keyframes wave2 {
-          0%, 100% { transform: translateX(0) translateY(0); }
-          50% { transform: translateX(25px) translateY(-8px); }
-        }
-        @keyframes fillUp {
-          0% { transform: scaleY(1); }
-          50% { transform: scaleY(1.03); }
-          100% { transform: scaleY(1); }
-        }
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      `}</style>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+    <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <div style={{ color: '#38bdf8', fontSize: '11px', fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Hydratation
-          </div>
-          <div style={{ color: 'white', fontSize: '13px', opacity: 0.7 }}>{getMessage()}</div>
+          <div className="font-medium">Hydratation</div>
+          <div className="text-xs text-gray-400 mt-1">{getMessage()}</div>
         </div>
-        <button onClick={reset} style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={reset} className="text-xs text-gray-300 hover:text-gray-500">
           Reset
         </button>
       </div>
 
-      {/* Bouteille + chiffres */}
-      <div style={{ display: 'flex', gap: '28px', alignItems: 'center', marginBottom: '28px' }}>
-
-        {/* Bouteille animée */}
-        <div style={{ position: 'relative', width: '80px', height: '120px', flexShrink: 0 }}>
-          {/* Contour bouteille */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            border: '2px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: '12px 12px 16px 16px',
-            overflow: 'hidden',
-          }}>
-            {/* Eau qui monte */}
-            <div style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: `${progression}%`,
-              background: 'linear-gradient(180deg, rgba(56,189,248,0.6) 0%, rgba(14,116,144,0.8) 100%)',
-              transition: 'height 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-              animation: animate ? 'fillUp 0.6s ease' : 'none',
-            }}>
-              {/* Vague 1 */}
-              <div style={{
-                position: 'absolute',
-                top: '-8px', left: '-20px', right: '-20px',
-                height: '16px',
-                background: 'rgba(56, 189, 248, 0.5)',
-                borderRadius: '50%',
-                animation: 'wave1 3s ease-in-out infinite',
-              }} />
-              {/* Vague 2 */}
-              <div style={{
-                position: 'absolute',
-                top: '-6px', left: '-20px', right: '-20px',
-                height: '12px',
-                background: 'rgba(56, 189, 248, 0.3)',
-                borderRadius: '50%',
-                animation: 'wave2 4s ease-in-out infinite',
-              }} />
-            </div>
-          </div>
-          {/* Bouchon */}
-          <div style={{
-            position: 'absolute',
-            top: '-10px', left: '50%', transform: 'translateX(-50%)',
-            width: '30px', height: '12px',
-            background: 'rgba(56, 189, 248, 0.3)',
-            border: '2px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: '4px 4px 0 0',
-          }} />
-          {/* % au centre */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: progression > 50 ? 'white' : 'rgba(56,189,248,0.9)',
-            fontSize: '14px', fontWeight: '700',
-            textShadow: progression > 50 ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-            transition: 'color 0.5s',
-          }}>
-            {progression}%
-          </div>
+      {/* Visuel bouteille + stats */}
+      <div className="flex items-center gap-6 mb-6">
+        {/* Bouteille */}
+        <div className="relative flex-shrink-0" style={{ width: 60, height: 100 }}>
+          <svg width="60" height="100" viewBox="0 0 60 100">
+            {/* Corps bouteille */}
+            <rect x="8" y="20" width="44" height="72" rx="8" fill="none" stroke="#e5e7eb" strokeWidth="2" />
+            {/* Bouchon */}
+            <rect x="20" y="10" width="20" height="12" rx="3" fill="#e5e7eb" />
+            {/* Eau */}
+            <clipPath id="bottle-clip">
+              <rect x="8" y="20" width="44" height="72" rx="8" />
+            </clipPath>
+            <rect
+              x="8"
+              y={20 + 72 * (1 - progression / 100)}
+              width="44"
+              height={72 * progression / 100}
+              fill={progression >= 100 ? '#4ade80' : '#60a5fa'}
+              clipPath="url(#bottle-clip)"
+              style={{ transition: 'all 0.6s ease' }}
+            />
+            {/* % */}
+            <text x="30" y="62" textAnchor="middle" fontSize="11" fontWeight="500" fill={progression > 50 ? 'white' : '#6b7280'}>
+              {progression}%
+            </text>
+          </svg>
         </div>
 
         {/* Stats */}
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: '16px' }}>
-            <span style={{ color: 'white', fontSize: '42px', fontWeight: '700', lineHeight: 1 }}>
-              {litresBus}
-            </span>
-            <span style={{ color: 'rgba(56,189,248,0.7)', fontSize: '16px', marginLeft: '4px' }}>L</span>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginTop: '2px' }}>
-              sur {litresObjectif}L objectif
-            </div>
+        <div className="flex-1">
+          <div className="mb-3">
+            <span className="text-3xl font-bold text-gray-800">{litresBus}</span>
+            <span className="text-sm text-gray-400 ml-1">L</span>
+            <div className="text-xs text-gray-400 mt-1">sur {litresObjectif}L objectif</div>
           </div>
-
-          {/* Barre progression */}
-          <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${progression}%`,
-              background: progression >= 100
-                ? 'linear-gradient(90deg, #22d3ee, #34d399)'
-                : 'linear-gradient(90deg, #0ea5e9, #38bdf8)',
-              borderRadius: '99px',
-              transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: '0 0 10px rgba(56,189,248,0.5)',
-            }} />
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full ${couleurBarre} rounded-full transition-all duration-500`}
+              style={{ width: `${progression}%` }}
+            />
           </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>0L</span>
-            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>{litresObjectif}L</span>
+          <div className="flex justify-between text-xs text-gray-300 mt-1">
+            <span>0L</span>
+            <span>{litresObjectif}L</span>
           </div>
         </div>
       </div>
 
       {/* Boutons rapides */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+      <div className="flex gap-2 mb-4">
         {boutons.map(b => (
           <button
             key={b.ml}
             onClick={() => ajouter(b.ml)}
             disabled={loading}
-            style={{
-              flex: 1,
-              minWidth: '56px',
-              background: 'rgba(56, 189, 248, 0.1)',
-              border: '1px solid rgba(56, 189, 248, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 4px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.2)'
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.2)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
+            className="flex-1 flex flex-col items-center gap-1 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-100 transition-all disabled:opacity-40"
           >
-            <span style={{ fontSize: '18px' }}>{b.label}</span>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '9px' }}>{b.sublabel}</span>
-            <span style={{ color: '#38bdf8', fontSize: '10px', fontWeight: '600' }}>+{b.ml}ml</span>
+            <span className="text-lg">{b.label}</span>
+            <span className="text-xs text-gray-500">{b.sublabel}</span>
+            <span className="text-xs font-medium text-blue-600">+{b.ml}ml</span>
           </button>
         ))}
       </div>
 
       {/* Saisie manuelle */}
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="flex gap-2">
         <input
           type="number"
           placeholder="Quantité personnalisée (ml)"
           value={quantiteManuelle}
           onChange={e => setQuantiteManuelle(e.target.value)}
-          style={{
-            flex: 1,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(56, 189, 248, 0.2)',
-            borderRadius: '10px',
-            padding: '10px 14px',
-            color: 'white',
-            fontSize: '13px',
-            outline: 'none',
-          }}
+          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
         />
         <button
           onClick={() => quantiteManuelle && ajouter(Number(quantiteManuelle))}
           disabled={!quantiteManuelle || loading}
-          style={{
-            background: 'rgba(56, 189, 248, 0.2)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: '10px',
-            padding: '10px 16px',
-            color: '#38bdf8',
-            fontSize: '13px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            opacity: !quantiteManuelle ? 0.4 : 1,
-          }}
+          className="bg-black text-white rounded-lg px-4 py-2 text-sm disabled:opacity-40"
         >
           + Ajouter
         </button>
