@@ -6,17 +6,12 @@ import WithingsSync from './components/WithingsSync'
 import MetricsBar from './components/MetricsBar'
 import LoggerPoids from './components/LoggerPoids'
 import GraphiquePoids from './components/GraphiquePoids'
-import GraphiqueCalories from './components/GraphiqueCalories'
 import Composition from './components/Composition'
-import Nutrition from './components/Nutrition'
 import Sport from './components/Sport'
 import SuggestionSeance from './components/SuggestionSeance'
 import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
-import Hydratation from './components/Hydratation'
-import GraphiqueMacros from './components/GraphiqueMacros'
-import MacrosIA from './components/MacrosIA'
 import NutritionLayout from './components/NutritionLayout'
 
 export default function Home() {
@@ -69,7 +64,7 @@ export default function Home() {
   const progression = Math.max(0, Math.round(((poidsDepart - dernierPoids) / (poidsDepart - objectifPoids)) * 100))
   const today = new Date().toISOString().split('T')[0]
   const kcalAujourdhui = repas.filter(r => r.date === today).reduce((s, r) => s + r.kcal, 0)
-  const kcalObj = objectifs?.kcal_journalier || 1850
+  const kcalObj = macrosIA?.kcal || objectifs?.kcal_journalier || 1850
   const semaines = Math.ceil((dernierPoids - objectifPoids) / 0.5)
   const dateObjectif = new Date()
   dateObjectif.setDate(dateObjectif.getDate() + semaines * 7)
