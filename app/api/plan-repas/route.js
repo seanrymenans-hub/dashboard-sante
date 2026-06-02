@@ -38,8 +38,10 @@ PROFIL UTILISATEUR :
 LISTE D'ALIMENTS AUTORISÉS (utilise UNIQUEMENT ces aliments, rien d'autre) :
 ${preferences}
 
-CONFIGURATION DE LA SEMAINE :
+JOURS À PLANIFIER (UNIQUEMENT ces jours, pas d'autres) :
 ${joursStr}
+
+IMPORTANT : Tu dois générer EXACTEMENT ${jours.length} jour(s) dans le tableau "jours". Pas plus, pas moins. Si tu reçois 3 jours, tu génères 3 jours.
 
 RÈGLES IMPORTANTES :
 - Compose des vrais repas équilibrés et savoureux — pas de liste générique
