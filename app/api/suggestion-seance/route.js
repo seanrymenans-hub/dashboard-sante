@@ -54,22 +54,20 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 {"type":"course ou renforcement","titre":"nom de la séance","duree":30,"intensite":"légère ou modérée ou intense","raison":"explication courte en 1-2 phrases basée sur les données réelles","exercices":[{"nom":"exercice ou étape","series":"ex: 3x15 ou 2km à 5min30/km"}]}`
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3000',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b:free',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7
       })
     })
 
     const data = await response.json()
-    console.log('OpenRouter response:', JSON.stringify(data))
     const text = data.choices?.[0]?.message?.content || ''
     const clean = text.replace(/```json|```/g, '').trim()
     const suggestion = JSON.parse(clean)
