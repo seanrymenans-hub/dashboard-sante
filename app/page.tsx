@@ -23,57 +23,20 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
-  const [macrosIA, setMacrosIA] = useState<any>(null)
-  const [updatingIA, setUpdatingIA] = useState(false)
-
-  const actualiserMacrosIA = useCallback(async () => {
-    setUpdatingIA(true)
-    try {
-      const res = await fetch('/api/macros-ia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ poids, seances, repas, composition, objectifs })
-      })
-      if (res.ok) {
-        // Une fois l'upsert fait par l'API, on recharge proprement les states du front
-        const semaine = (() => {
-          const now = new Date()
-          const lundi = new Date(now)
-          lundi.setDate(now.getDate() - ((now.getDay() + 6) % 7))
-          return lundi.toISOString().split('T')[0]
-        })()
-        const m = await supabase.from('macros_ia').select('*').eq('semaine', semaine).maybeSingle()
-        setMacrosIA(m.data || null)
-      }
-    } catch (e) {
-      console.error("Erreur d'actualisation des objectifs IA:", e)
-    } finally {
-      setUpdatingIA(false)
-    }
-  }, [poids, seances, repas, composition, objectifs])
 
   const fetchData = useCallback(async () => {
-    const semaine = (() => {
-      const now = new Date()
-      const lundi = new Date(now)
-      lundi.setDate(now.getDate() - ((now.getDay() + 6) % 7))
-      return lundi.toISOString().split('T')[0]
-    })()
-
-    const [p, r, s, o, c, m] = await Promise.all([
+    const [p, r, s, o, c] = await Promise.all([
       supabase.from('poids').select('*').order('date', { ascending: false }),
       supabase.from('repas').select('*').order('date', { ascending: false }),
       supabase.from('seances').select('*').order('date', { ascending: false }),
       supabase.from('objectifs').select('*').limit(1).single(),
       supabase.from('composition').select('*').order('date', { ascending: false }),
-      supabase.from('macros_ia').select('*').eq('semaine', semaine).maybeSingle(),
     ])
     setPoids(p.data || [])
     setRepas(r.data || [])
     setSeances(s.data || [])
     setObjectifs(o.data || null)
     setComposition(c.data || [])
-    setMacrosIA(m.data || null)
     setLoading(false)
   }, [])
 
@@ -91,7 +54,7 @@ export default function Home() {
   const progression = Math.max(0, Math.round(((poidsDepart - dernierPoids) / (poidsDepart - objectifPoids)) * 100))
   const today = new Date().toISOString().split('T')[0]
   const kcalAujourdhui = repas.filter(r => r.date === today).reduce((s, r) => s + r.kcal, 0)
-  const kcalObj = macrosIA?.kcal || objectifs?.kcal_journalier || 1850
+  const kcalObj = objectifs?.kcal_journalier || 1850
   const semaines = Math.ceil((dernierPoids - objectifPoids) / 0.5)
   const dateObjectif = new Date()
   dateObjectif.setDate(dateObjectif.getDate() + semaines * 7)
@@ -106,40 +69,16 @@ export default function Home() {
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={actualiserMacrosIA} 
-              disabled={updatingIA}
-              className="text-sm bg-white border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              {updatingIA ? 'Calcul en cours...' : '🔄 Actualiser objectifs'}
-            </button>
-            <button onClick={() => setShowParametres(true)} className="text-sm border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50 transition-colors">
-              ⚙️ Paramètres
-            </button>
-          </div>
+          <button onClick={() => setShowParametres(true)} className="text-sm border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50">
+            ⚙️ Paramètres
+          </button>
         </div>
 
         <Navigation ongletActif={onglet} setOnglet={setOnglet} />
 
         {onglet === 'accueil' && (
           <div>
-            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal } : objectifs} />
-            
-            {/* 🌟 LE BLOC BONUS DE L'IA ICI */}
-            {macrosIA?.message && (
-              <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg text-sm text-gray-700 shadow-sm">
-                <span className="font-semibold text-blue-800">Note de l'IA du jour :</span>
-                <p className="mt-1 italic">"{macrosIA.message}"</p>
-                {macrosIA.ajustement && (
-                  <div className="mt-2 text-xs text-gray-600 font-mono bg-white p-2 rounded border border-blue-100 whitespace-pre-line">
-                    <strong>Calculs & Ajustements :</strong><br />
-                    {macrosIA.ajustement}
-                  </div>
-                )}
-              </div>
-            )}
-
+            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
             <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
               <div className="font-medium mb-4">Progression vers l'objectif</div>
               <div className="mb-4">
@@ -168,7 +107,7 @@ export default function Home() {
               </div>
             </div>
             <Streak repas={repas} objectifs={objectifs} />
-            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal, proteines_objectif: macrosIA.proteines, glucides_objectif: macrosIA.glucides, lipides_objectif: macrosIA.lipides } : objectifs} />
+            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>
         )}
 
@@ -185,8 +124,6 @@ export default function Home() {
           <NutritionLayout
             repas={repas}
             objectifs={objectifs}
-            macrosIA={macrosIA}
-            onMacrosUpdate={setMacrosIA}
             composition={composition}
             poids={poids}
             seances={seances}
@@ -196,7 +133,7 @@ export default function Home() {
 
         {onglet === 'sport' && (
           <div>
-            <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={macrosIA ? { ...objectifs, kcal_journalier: macrosIA.kcal } : objectifs} composition={composition} />
+            <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
             <Sport seances={seances} onRefresh={fetchData} poids={poids} />
           </div>
         )}

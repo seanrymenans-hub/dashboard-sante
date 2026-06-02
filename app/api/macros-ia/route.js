@@ -59,6 +59,7 @@ export async function POST(request) {
       glucides: repasAujourdhui.reduce((s, r) => s + (r.glucides ?? r.macros?.glucides ?? 0), 0),
       lipides: repasAujourdhui.reduce((s, r) => s + (r.lipides ?? r.macros?.lipides ?? 0), 0),
     }
+    console.log('Debug repas:', { todayStr, nbRepasTotal: repas?.length, nbRepasAujourdhui: repasAujourdhui.length, kcalTotal: dejaConsomme.kcal, premierRepasDate: repas?.[0]?.date })
 
     // Composition corporelle
     const derniereCompo = composition?.[0]
@@ -127,9 +128,9 @@ FORMAT DE SORTIE JSON STRICT :
   "proteines": 0,
   "glucides": 0,
   "lipides": 0,
-  "deficit": 0,
-  "message": "Texte d'analyse factuelle ici",
-  "ajustement": "Texte de plan d'action ici"
+  "deficit": 750,
+  "message": "Explication détaillée du calcul : TMB + sport - déficit = objectif calorique, avec justification de chaque macro",
+  "ajustement": "Plan d'action précis pour optimiser la perte de poids"
 }`
 
     if (!process.env.GITHUB_TOKEN) {

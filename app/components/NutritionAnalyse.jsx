@@ -1,9 +1,7 @@
 'use client'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
-import MacrosIA from './MacrosIA'
-
-export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, onMacrosUpdate }) {
+export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition }) {
 
   const kcalObj = objectifs?.kcal_journalier || 1850
 

@@ -12,16 +12,8 @@ const TABS = [
   { id: 'analyse', label: 'Analyse', emoji: '📈' },
 ]
 
-export default function NutritionLayout({ repas, objectifs, macrosIA, onMacrosUpdate, composition, poids, seances, onRefresh }) {
+export default function NutritionLayout({ repas, objectifs, composition, poids, seances, onRefresh }) {
   const [tab, setTab] = useState('aujourdhui')
-
-  const objectifsEffectifs = macrosIA ? {
-    ...objectifs,
-    kcal_journalier: macrosIA.kcal,
-    proteines_objectif: macrosIA.proteines,
-    glucides_objectif: macrosIA.glucides,
-    lipides_objectif: macrosIA.lipides,
-  } : objectifs
 
   return (
     <div>
@@ -43,16 +35,16 @@ export default function NutritionLayout({ repas, objectifs, macrosIA, onMacrosUp
       </div>
 
       {tab === 'aujourdhui' && (
-        <NutritionAujourdhui repas={repas} objectifs={objectifsEffectifs} onRefresh={onRefresh} />
+        <NutritionAujourdhui repas={repas} objectifs={objectifs} onRefresh={onRefresh} />
       )}
       {tab === 'suggestions' && (
-        <NutritionSuggestions repas={repas} objectifs={objectifsEffectifs} composition={composition} poids={poids} />
+        <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
       )}
       {tab === 'hydratation' && (
         <Hydratation poids={poids} />
       )}
       {tab === 'analyse' && (
-        <NutritionAnalyse repas={repas} objectifs={objectifsEffectifs} seances={seances} poids={poids} composition={composition} onMacrosUpdate={onMacrosUpdate} />
+        <NutritionAnalyse repas={repas} objectifs={objectifs} seances={seances} poids={poids} composition={composition} />
       )}
     </div>
   )

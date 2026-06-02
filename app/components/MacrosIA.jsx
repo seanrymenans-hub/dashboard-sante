@@ -28,8 +28,6 @@ export default function MacrosIA({ poids, seances, repas, composition, objectifs
     if (existing) {
       setData(existing)
       onMacrosUpdate?.(existing)
-    } else {
-      generer()
     }
   }
 
