@@ -16,7 +16,7 @@ function getLundiSemaine() {
   return lundi.toISOString().split('T')[0]
 }
 
-export default function PlanRepas({ objectifs, poids, composition }) {
+export default function PlanRepas({ objectifs, poids, composition, planCache, onPlanUpdate }) {
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -38,7 +38,12 @@ export default function PlanRepas({ objectifs, poids, composition }) {
     setLoading(true)
     const { data, error } = await supabase.from('meal_plans').select('*').eq('semaine', semaine).maybeSingle()
     if (error) console.error('fetchPlan error:', error)
-    if (data) setPlan(data)
+    if (planCache) {
+      setPlan(planCache)
+    } else if (data) {
+      setPlan(data)
+      onPlanUpdate?.(data)
+    }
     setLoading(false)
   }
 
@@ -92,7 +97,9 @@ export default function PlanRepas({ objectifs, poids, composition }) {
       })
       const result = await res.json()
       if (result.jours) {
-        setPlan({ plan: result.jours, liste_courses: result.listeCourses })
+        const newPlan = { plan: result.jours, liste_courses: result.listeCourses }
+        setPlan(newPlan)
+        onPlanUpdate?.(newPlan)
         setShowConfig(false)
       }
     } catch(e) { console.error(e) }
