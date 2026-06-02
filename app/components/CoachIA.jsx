@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { computeHealthEngine } from '../../lib/healthEngine'
 
 export default function CoachIA({ poids, repas, seances, composition, objectifs }) {
   const [data, setData] = useState(null)
@@ -9,11 +10,12 @@ export default function CoachIA({ poids, repas, seances, composition, objectifs 
   async function generer() {
     setLoading(true)
     setErreur(null)
+    const { budget, progression, tendances } = computeHealthEngine({ poids, repas, seances, composition, objectifs })
     try {
       const res = await fetch('/api/coach-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ poids, repas, seances, composition, objectifs })
+        body: JSON.stringify({ poids, repas, seances, composition, objectifs, budget, progression, tendances })
       })
       const result = await res.json()
       if (result.bilan) setData(result)

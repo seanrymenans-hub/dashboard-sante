@@ -1,5 +1,6 @@
 export async function POST(request) {
-  const { poids, repas, seances, composition, objectifs } = await request.json()
+  const body = await request.json()
+const { poids, repas, seances, composition, objectifs } = body
 
   const today = new Date()
   const lundiDernier = new Date(today)
@@ -31,7 +32,19 @@ export async function POST(request) {
     ? (derniereCompo.masse_musculaire - avantCompo.masse_musculaire).toFixed(1)
     : null
 
+  const { budget, progression, tendances } = body
   const prompt = `Tu es un coach personnel expert en perte de poids, nutrition et sport. Voici les données complètes de ton athlète cette semaine :
+
+BUDGET CALORIQUE :
+- Budget du jour : ${budget?.budgetJour || '?'} kcal (TMB ${budget?.tmb || '?'} + sport ${budget?.kcalSport || 0} kcal)
+- Consommé aujourd'hui : ${budget?.kcalConsommees || 0} kcal
+- Surplus/Déficit du jour : ${budget?.surplusOuDeficit || 0} kcal
+
+TENDANCES NUTRITIONNELLES :
+- Moyenne calories 7j : ${tendances?.moyKcal7j || 0} kcal/jour
+- Respect objectifs 7j : ${tendances?.pctRespect7j || 0}%
+- Respect objectifs 30j : ${tendances?.pctRespect30j || 0}%
+- Moyenne protéines 7j : ${tendances?.moyProt7j || 0}g/jour
 
 OBJECTIFS :
 - Poids actuel : ${dernierPoids} kg → objectif : ${objectifs?.poids_objectif || 70} kg

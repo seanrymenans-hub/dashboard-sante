@@ -35,7 +35,7 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
       </div>
 
       {tab === 'aujourdhui' && (
-        <NutritionAujourdhui repas={repas} objectifs={objectifs} onRefresh={onRefresh} />
+        <NutritionAujourdhui repas={repas} objectifs={objectifs} seances={seances} onRefresh={onRefresh} />
       )}
       {tab === 'suggestions' && (
         <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} />

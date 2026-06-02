@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { computeHealthEngine } from '../../lib/healthEngine'
 
 export default function NutritionAujourdhui({ repas, objectifs, onRefresh }) {
   const [nomAliment, setNomAliment] = useState('')
@@ -15,7 +16,8 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh }) {
   const repasAujourdhui = repas.filter(r => r.date === selectedDate)
   const isToday = selectedDate === todayStr
 
-  const kcalObj = objectifs?.kcal_journalier || 1850
+  const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
+  const kcalObj = isToday ? budget.budgetJour : (objectifs?.kcal_journalier || 1850)
   const protObj = objectifs?.proteines_objectif || 150
   const carbObj = objectifs?.glucides_objectif || 250
   const lipObj = objectifs?.lipides_objectif || 67

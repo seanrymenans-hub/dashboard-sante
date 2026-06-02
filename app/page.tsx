@@ -13,6 +13,7 @@ import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
 import NutritionLayout from './components/NutritionLayout'
+import { computeHealthEngine } from '../lib/healthEngine'
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -48,16 +49,14 @@ export default function Home() {
     </div>
   )
 
-  const dernierPoids = poids?.[0]?.valeur || 0
-  const objectifPoids = objectifs?.poids_objectif || 70
-  const poidsDepart = objectifs?.poids_depart || 89.3
-  const progression = Math.max(0, Math.round(((poidsDepart - dernierPoids) / (poidsDepart - objectifPoids)) * 100))
-  const today = new Date().toISOString().split('T')[0]
-  const kcalAujourdhui = repas.filter(r => r.date === today).reduce((s, r) => s + r.kcal, 0)
-  const kcalObj = objectifs?.kcal_journalier || 1850
-  const semaines = Math.ceil((dernierPoids - objectifPoids) / 0.5)
-  const dateObjectif = new Date()
-  dateObjectif.setDate(dateObjectif.getDate() + semaines * 7)
+  const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs })
+  const { budget, progression: prog, tendances, today } = engine
+
+  const dernierPoids = prog.poidsActuel
+  const objectifPoids = prog.poidsObjectif
+  const poidsDepart = prog.poidsDepart
+  const kcalAujourdhui = budget.kcalConsommees
+  const kcalObj = budget.budgetJour
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -84,13 +83,13 @@ export default function Home() {
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Poids · {poidsDepart} → {objectifPoids} kg</span>
-                  <span className="font-medium">{progression}%</span>
+                  <span className="font-medium">{prog.progressionPct}%</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded">
-                  <div className="h-2 bg-green-500 rounded transition-all" style={{ width: progression + '%' }} />
+                  <div className="h-2 bg-green-500 rounded transition-all" style={{ width: prog.progressionPct + '%' }} />
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {(poidsDepart - dernierPoids).toFixed(1)} kg perdus · {(dernierPoids - objectifPoids).toFixed(1)} kg restants
+                  {prog.kgPerdus.toFixed(1)} kg perdus · {prog.kgRestants.toFixed(1)} kg restants
                 </div>
               </div>
               <div className="mb-2">
@@ -103,7 +102,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
-                🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{dateObjectif.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+                🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{prog.dateEstimeeObjectif?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Objectif atteint !'}</strong>
               </div>
             </div>
             <Streak repas={repas} objectifs={objectifs} />

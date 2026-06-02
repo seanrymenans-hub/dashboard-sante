@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { computeHealthEngine } from '../../lib/healthEngine'
 
 export default function NutritionSuggestions({ repas, objectifs, composition, poids }) {
   const [suggestions, setSuggestions] = useState(null)
@@ -19,17 +20,18 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
     setEditingPrefs(false)
   }
 
+  const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
   const today = new Date().toISOString().split('T')[0]
   const repasAujourdhui = repas.filter(r => r.date === today)
-  const kcalMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.kcal || 0), 0))
+  const kcalMange = budget.kcalConsommees
   const protMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.proteines || 0), 0))
   const carbMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.glucides || 0), 0))
   const lipMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.lipides || 0), 0))
-  const kcalObj = objectifs?.kcal_journalier || 1850
+  const kcalObj = budget.budgetJour
   const protObj = objectifs?.proteines_objectif || 150
   const carbObj = objectifs?.glucides_objectif || 250
   const lipObj = objectifs?.lipides_objectif || 67
-  const kcalRestant = Math.max(0, kcalObj - kcalMange)
+  const kcalRestant = budget.kcalRestantes
 
   async function genererSuggestions() {
     setLoading(true)
