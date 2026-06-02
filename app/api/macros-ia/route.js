@@ -1,30 +1,34 @@
 export async function POST(request) {
-  const { poids, seances, repas, composition, objectifs } = await request.json()
+  try {
+    const { poids, seances, repas, composition, objectifs } = await request.json()
 
-  const poidsActuel = poids?.[0]?.valeur || 82
-  const objectifPoids = objectifs?.poids_objectif || 70
-  const tmb = objectifs?.tmb || 1875
-  const today = new Date().toISOString().split('T')[0]
+    const poidsActuel = poids?.[0]?.valeur || 82
+    const objectifPoids = objectifs?.poids_objectif || 70
+    const tmb = objectifs?.tmb || 1875
+    const today = new Date().toISOString().split('T')[0]
 
-  // Calories brûlées aujourd'hui
-  const kcalBruléesAujourdhui = seances
-    .filter(s => s.date === today)
-    .reduce((s, r) => s + (r.kcal || 0), 0)
+    // Calories brûlées aujourd'hui
+    const kcalBruléesAujourdhui = seances
+      ? seances.filter(s => s.date === today).reduce((s, r) => s + (r.kcal || 0), 0)
+      : 0
 
-  // Moyenne calories brûlées 7 derniers jours
-  const seances7j = seances.filter(s => {
-    const diff = (new Date() - new Date(s.date)) / (1000 * 60 * 60 * 24)
-    return diff <= 7
-  })
-  const kcalSportMoyenne = seances7j.length > 0
-    ? Math.round(seances7j.reduce((s, r) => s + (r.kcal || 0), 0) / 7)
-    : 0
+    // Moyenne calories brûlées 7 derniers jours
+    const seances7j = seances 
+      ? seances.filter(s => {
+          const diff = (new Date() - new Date(s.date)) / (1000 * 60 * 60 * 24)
+          return diff <= 7
+        })
+      : []
+      
+    const kcalSportMoyenne = seances7j.length > 0
+      ? Math.round(seances7j.reduce((s, r) => s + (r.kcal || 0), 0) / 7)
+      : 0
 
-  // Composition corporelle
-  const derniereCompo = composition?.[0]
-  const masseMusculaire = derniereCompo?.masse_musculaire || 60
+    // Composition corporelle
+    const derniereCompo = composition?.[0]
+    const masseMusculaire = derniereCompo?.masse_musculaire || 60
 
-  const prompt = `Tu es un nutritionniste expert en perte de poids rapide et préservation musculaire. Calcule les macros optimales pour aujourd'hui.
+    const prompt = `Tu es un nutritionniste expert en perte de poids rapide et préservation musculaire. Calcule les macros optimales pour aujourd'hui.
 
 PROFIL :
 - Poids actuel : ${poidsActuel} kg
@@ -55,44 +59,46 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
   "ajustement": "<explication pourquoi ces macros précises aujourd'hui>"
 }`
 
-try {
-  const response = await fetch(
-    'https://models.inference.ai.azure.com/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-      }),
+    // Vérification de la clé API
+    if (!process.env.GITHUB_TOKEN) {
+      throw new Error("La variable GITHUB_TOKEN est manquante.");
     }
-  )
 
-  console.log('GitHub API status:', response.status)
+    const response = await fetch(
+      'https://models.inference.ai.azure.com/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+        }),
+      }
+    )
 
-  const rawText = await response.text()
-  console.log('GitHub API response:', rawText)
+    console.log('GitHub API status:', response.status)
 
-  const data = JSON.parse(rawText)
+    const rawText = await response.text()
+    console.log('GitHub API response:', rawText)
 
-  const text = data.choices?.[0]?.message?.content || ''
-  const clean = text.replace(/```json|```/g, '').trim()
-  const result = JSON.parse(clean)
+    if (!response.ok) {
+      throw new Error(`Erreur GitHub API (${response.status}): ${rawText}`)
+    }
 
-  return Response.json(result)
-} catch (e) {
-  console.error('macros-ia error:', e.message, e.stack)
-  return Response.json({ error: e.message }, { status: 500 })
-}
+    const data = JSON.parse(rawText)
     const text = data.choices?.[0]?.message?.content || ''
+    
+    // Nettoyage au cas où le modèle met du markdown
     const clean = text.replace(/```json|```/g, '').trim()
     const result = JSON.parse(clean)
+
     return Response.json(result)
-  } catch(e) {
+
+  } catch (e) {
     console.error('macros-ia error:', e.message, e.stack)
     return Response.json({ error: e.message }, { status: 500 })
   }
