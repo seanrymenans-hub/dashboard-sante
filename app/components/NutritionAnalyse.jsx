@@ -39,17 +39,6 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
 
   return (
     <div className="flex flex-col gap-4">
-
-      {/* Objectifs IA */}
-      <MacrosIA
-        poids={poids}
-        seances={seances}
-        repas={repas}
-        composition={composition}
-        objectifs={objectifs}
-        onMacrosUpdate={onMacrosUpdate}
-      />
-
       {/* Respect des objectifs */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <div className="font-medium mb-4">Respect des objectifs</div>
