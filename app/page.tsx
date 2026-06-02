@@ -23,6 +23,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
+  const [planSemaine, setPlanSemaine] = useState<any>(null)
 
   const fetchData = useCallback(async () => {
     const [p, r, s, o, c] = await Promise.all([
@@ -125,6 +126,8 @@ export default function Home() {
             poids={poids}
             seances={seances}
             onRefresh={fetchData}
+            planSemaine={planSemaine}
+            onPlanUpdate={setPlanSemaine}
           />
         )}
 
