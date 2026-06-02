@@ -41,8 +41,13 @@ export default function PlanRepas({ objectifs, poids, composition, planCache, on
     if (planCache) {
       setPlan(planCache)
     } else if (data) {
-      setPlan(data)
-      onPlanUpdate?.(data)
+      const parsed = {
+        ...data,
+        plan: typeof data.plan === 'string' ? JSON.parse(data.plan) : data.plan,
+        liste_courses: typeof data.liste_courses === 'string' ? JSON.parse(data.liste_courses) : data.liste_courses,
+      }
+      setPlan(parsed)
+      onPlanUpdate?.(parsed)
     }
     setLoading(false)
   }
