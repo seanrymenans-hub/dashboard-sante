@@ -55,24 +55,39 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
   "ajustement": "<explication pourquoi ces macros précises aujourd'hui>"
 }`
 
-  try {
-    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
-      console.log('GitHub API status:', response.status)
-      const rawText = await response.text()
-     console.log('GitHub API response:', rawText)
-     const data = JSON.parse(rawText)
+try {
+  const response = await fetch(
+    'https://models.inference.ai.azure.com/chat/completions',
+    {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3
-      })
-    })
-    const data = await response.json()
+        temperature: 0.3,
+      }),
+    }
+  )
+
+  console.log('GitHub API status:', response.status)
+
+  const rawText = await response.text()
+  console.log('GitHub API response:', rawText)
+
+  const data = JSON.parse(rawText)
+
+  const text = data.choices?.[0]?.message?.content || ''
+  const clean = text.replace(/```json|```/g, '').trim()
+  const result = JSON.parse(clean)
+
+  return Response.json(result)
+} catch (e) {
+  console.error('macros-ia error:', e.message, e.stack)
+  return Response.json({ error: e.message }, { status: 500 })
+}
     const text = data.choices?.[0]?.message?.content || ''
     const clean = text.replace(/```json|```/g, '').trim()
     const result = JSON.parse(clean)
