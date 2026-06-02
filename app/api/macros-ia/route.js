@@ -57,6 +57,10 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 
   try {
     const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+      console.log('GitHub API status:', response.status)
+      const rawText = await response.text()
+     console.log('GitHub API response:', rawText)
+     const data = JSON.parse(rawText)
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
@@ -74,6 +78,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
     const result = JSON.parse(clean)
     return Response.json(result)
   } catch(e) {
+    console.error('macros-ia error:', e.message, e.stack)
     return Response.json({ error: e.message }, { status: 500 })
   }
 }
