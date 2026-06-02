@@ -1,22 +1,49 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Initialisation du client Supabase avec la clé service_role pour l'écriture système
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY
+)
+
 export async function POST(request) {
   try {
     const { poids, seances, repas, composition, objectifs } = await request.json()
+    console.log('Données reçues:', JSON.stringify({
+      poidsActuel: poids?.[0]?.valeur,
+      nbRepas: repas?.length,
+      nbSeances: seances?.length,
+      tmb: objectifs?.tmb,
+      kcalObj: objectifs?.kcal_journalier,
+    }))
 
     const poidsActuel = poids?.[0]?.valeur || 82
     const objectifPoids = objectifs?.poids_objectif || 70
     const tmb = objectifs?.tmb || 1875
-    const today = new Date().toISOString().split('T')[0]
+    
+    // Utilisation de dates standardisées "à minuit" pour éviter les bugs d'heures
+    const maintenant = new Date()
+    const aujourdhuiMinuit = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate())
+    const todayStr = aujourdhuiMinuit.toISOString().split('T')[0]
+
+    // Récupération du lundi de la semaine en cours pour indexer dans Supabase
+    const now = new Date()
+    const lundi = new Date(now)
+    lundi.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    const semaineStr = lundi.toISOString().split('T')[0]
 
     // 1. Calories brûlées aujourd'hui (Sport)
     const kcalBruléesAujourdhui = seances
-      ? seances.filter(s => s.date === today).reduce((s, r) => s + (r.kcal || 0), 0)
+      ? seances.filter(s => s.date === todayStr).reduce((s, r) => s + (r.kcal || 0), 0)
       : 0
 
-    // Moyenne calories brûlées 7 derniers jours
+    // Moyenne calories brûlées 7 derniers jours (comparaison propre de date à date)
     const seances7j = seances 
       ? seances.filter(s => {
-          const diff = (new Date() - new Date(s.date)) / (1000 * 60 * 60 * 24)
-          return diff <= 7
+          const dateSeance = new Date(s.date)
+          const diffTemps = aujourdhuiMinuit - new Date(dateSeance.getFullYear(), dateSeance.getMonth(), dateSeance.getDate())
+          const diffJours = diffTemps / (1000 * 60 * 60 * 24)
+          return diffJours >= 0 && diffJours <= 7
         })
       : []
       
@@ -24,55 +51,85 @@ export async function POST(request) {
       ? Math.round(seances7j.reduce((s, r) => s + (r.kcal || 0), 0) / 7)
       : 0
 
-    // 2. CE QUE TU AS DÉJÀ MANGÉ AUJOURD'HUI (La nouveauté !)
-    const repasAujourdhui = repas ? repas.filter(r => r.date === today) : []
+    // 2. CE QUE TU AS DÉJÀ MANGÉ AUJOURD'HUI (Sécurisé avec ??)
+    const repasAujourdhui = repas ? repas.filter(r => r.date === todayStr) : []
     const dejaConsomme = {
-      kcal: repasAujourdhui.reduce((s, r) => s + (r.kcal || 0), 0),
-      proteines: repasAujourdhui.reduce((s, r) => s + (r.proteines || r.macros?.proteines || 0), 0),
-      glucides: repasAujourdhui.reduce((s, r) => s + (r.glucides || r.macros?.glucides || 0), 0),
-      lipides: repasAujourdhui.reduce((s, r) => s + (r.lipides || r.macros?.lipides || 0), 0),
+      kcal: repasAujourdhui.reduce((s, r) => s + (r.kcal ?? 0), 0),
+      proteines: repasAujourdhui.reduce((s, r) => s + (r.proteines ?? r.macros?.proteines ?? 0), 0),
+      glucides: repasAujourdhui.reduce((s, r) => s + (r.glucides ?? r.macros?.glucides ?? 0), 0),
+      lipides: repasAujourdhui.reduce((s, r) => s + (r.lipides ?? r.macros?.lipides ?? 0), 0),
     }
 
     // Composition corporelle
     const derniereCompo = composition?.[0]
     const masseMusculaire = derniereCompo?.masse_musculaire || 60
 
-    // prompt mis à jour pour inclure le contexte de ce que tu as mangé !
-    const prompt = `Tu es un nutritionniste expert en perte de poids rapide et préservation musculaire. Calcule les macros cibles RESTANTES ou AJUSTÉES pour le reste de la journée.
+    // 🌟 LE PROMPT ENTIÈREMENT NETTOYÉ DES SOUCIS DE SYNTAXE
+    const prompt = `Tu es un moteur de calcul nutritionnel déterministe et factuel, optimisé pour la perte de masse grasse maximale et la préservation de la masse musculaire.
 
-PROFIL :
+⚠️ DIRECTIVE STRICTE : Pas de phrases d'introduction, pas de politesses, pas de conseils généraux. Analyse les données et applique les formules mathématiques suivantes.
+
+---
+
+PROFIL UTILISATEUR
 - Poids actuel : ${poidsActuel} kg
-- Objectif final : ${objectifPoids} kg (perte de poids rapide et sûre)
-- TMB : ${tmb} kcal
+- Objectif cible : ${objectifPoids} kg
+- TMB (Métabolisme de base) : ${tmb} kcal
 - Masse musculaire : ${masseMusculaire} kg
 
-ACTIVITÉ ET SPORT :
-- Calories brûlées sport aujourd'hui : ${kcalBruléesAujourdhui} kcal
-- Moyenne calories sport/jour (7j) : ${kcalSportMoyenne} kcal
+---
 
-CE QUI A DÉJÀ ÉTÉ MANGÉ AUJOURD'HUI :
-- Calories consommées : ${dejaConsomme.kcal} kcal
-- Protéines consommées : ${dejaConsomme.proteines}g
-- Glucides consommés : ${dejaConsomme.glucides}g
-- Lipides consommés : ${dejaConsomme.lipides}g
+SITUATION DU JOUR
+- Calories brûlées via le sport aujourd'hui : ${kcalBruléesAujourdhui} kcal
+- Moyenne sport (7j) : ${kcalSportMoyenne} kcal
+- Déjà consommé aujourd'hui :
+  - Calories : ${dejaConsomme.kcal} kcal
+  - Protéines : ${dejaConsomme.proteines} g
+  - Glucides : ${dejaConsomme.glucides} g
+  - Lipides : ${dejaConsomme.lipides} g
 
-RÈGLES STRICTES :
-- Déficit maximum : 750 kcal/jour par rapport aux dépenses totales (TMB + Sport)
-- Protéines totales de la journée : minimum 2g par kg de masse musculaire.
-- Calories minimum absolues sur la journée : 1200 kcal.
-- Analyse ce qui a déjà été mangé. Si l'utilisateur a déjà dépassé ou est proche d'un quota (ex: trop de lipides), ajuste les macros restantes pour compenser et rééquilibrer la journée.
+---
 
-Calcule les macros cibles TOTALES idéales pour cette journée (en prenant en compte cette situation) et explique ton ajustement.
+RÈGLES DE CALCUL ET LOGIQUE (À SUIVRE DANS L'ORDRE)
 
-Réponds UNIQUEMENT en JSON valide sans markdown :
+1. BESOIN_ENERGETIQUE_TOTAL = TMB + Calories brûlées via le sport aujourd'hui.
+
+2. CIBLE_CALORIES_JOUR = BESOIN_ENERGETIQUE_TOTAL - 750.
+   (Note : Pas de limite basse à 1200 kcal. La cible est purement mathématique selon la formule ci-dessus).
+
+3. PROTÉINES_JOUR (Fixe) = Math.round(2 * masse_musculaire).
+   (Les protéines restent prioritaires pour protéger le muscle, soit ${Math.round(masseMusculaire * 2)}g).
+
+4. RÉPARTITION DES CALORIES RESTANTES (CIBLE_CALORIES_JOUR - (PROTÉINES_JOUR * 4)) :
+   - SI sport aujourd'hui > 200 kcal (Journée active) :
+     - Lipides = 25% des calories restantes / 9
+     - Glucides = 75% des calories restantes / 4 (Priorité à la recharge de glycogène)
+   - SI sport aujourd'hui <= 200 kcal (Journée sédentaire) :
+     - Lipides = 40% des calories restantes / 9
+     - Glucides = 60% des calories restantes / 4 (Stratégie Low-Carb pour vider les stocks)
+
+5. ANALYSE DU DÉPASSEMENT :
+   - Compare "Déjà consommé : Calories" avec "CIBLE_CALORIES_JOUR".
+   - SI Déjà consommé > CIBLE_CALORIES_JOUR :
+     - Positionne le message pour indiquer factuellement le montant du dépassement.
+     - Dans "ajustement", calcule une stratégie précise pour le lendemain (ex: augmenter le déficit du lendemain de X kcal ou planifier une séance de sport de X min pour compenser).
+
+6. VALEURS DU JSON :
+   Les clés "kcal", "proteines", "glucides", "lipides" doivent refléter la CIBLE GLOBALE AJUSTÉE pour toute la journée.
+   - Si tu constates un dépassement aujourd'hui, la cible "kcal" doit rester la cible idéale de base de la journée (pour que le tableau de bord affiche visuellement le dépassement dans la jauge).
+   - Par contre, utilise le champ "message" pour dire : "Tu as consommé 921 kcal sur une cible idéale de X kcal." et utilise le champ "ajustement" pour donner les calculs précis.
+
+---
+
+FORMAT DE SORTIE JSON STRICT :
 {
-  "kcal": <cible_totale_calories_journee>,
-  "proteines": <cible_totale_proteines_journee>,
-  "glucides": <cible_totale_glucides_journee>,
-  "lipides": <cible_totale_lipides_journee>,
-  "deficit": <deficit_anticipe_sur_la_journee>,
-  "message": "<message de coaching hyper personnalisé qui commente ce qu'il a mangé/fait comme sport aujourd'hui>",
-  "ajustement": "<explication de ton calcul mathématique d'adaptation face aux repas et au sport du jour>"
+  "kcal": 0,
+  "proteines": 0,
+  "glucides": 0,
+  "lipides": 0,
+  "deficit": 0,
+  "message": "Texte d'analyse factuelle ici",
+  "ajustement": "Texte de plan d'action ici"
 }`
 
     if (!process.env.GITHUB_TOKEN) {
@@ -90,7 +147,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.3,
+          temperature: 0,
         }),
       }
     )
@@ -102,8 +159,30 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 
     const data = JSON.parse(rawText)
     const text = data.choices?.[0]?.message?.content || ''
-    const clean = text.replace(/```json|```/g, '').trim()
+    const clean = text
+     .replaceAll('```json', '')
+     .replaceAll('```', '')
+     .trim()
     const result = JSON.parse(clean)
+
+    // 🌟 SAUVEGARDE EN BASE DE DONNÉES DANS MACROS_IA
+    const { error: upsertError } = await supabase
+      .from('macros_ia')
+      .upsert({ 
+        semaine: semaineStr, 
+        kcal: result.kcal,
+        proteines: result.proteines,
+        glucides: result.glucides,
+        lipides: result.lipides,
+        deficit: result.deficit,
+        message: result.message,
+        ajustement: result.ajustement,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'semaine' })
+
+    if (upsertError) {
+      console.error("Erreur de sauvegarde Supabase:", upsertError)
+    }
 
     return Response.json(result)
 
