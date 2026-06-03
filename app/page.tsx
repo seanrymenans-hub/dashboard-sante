@@ -25,6 +25,7 @@ export default function Home() {
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
   const [planSemaine, setPlanSemaine] = useState<any>(null)
+  const [showBudgetDetail, setShowBudgetDetail] = useState(false)
 
   const fetchData = useCallback(async () => {
     const [p, r, s, o, c, pa] = await Promise.all([
@@ -97,12 +98,53 @@ export default function Home() {
 
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-500">Calories aujourd'hui</span>
+                  <button
+                    onClick={() => setShowBudgetDetail(!showBudgetDetail)}
+                    className="text-gray-500 hover:text-blue-500 transition-colors flex items-center gap-1"
+                  >
+                    Calories aujourd'hui <span className="text-xs">ℹ️</span>
+                  </button>
                   <span className="font-medium">{kcalAujourdhui} / {kcalObj} kcal</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded">
                   <div className="h-2 bg-blue-400 rounded transition-all" style={{ width: Math.min(100, Math.round(kcalAujourdhui / kcalObj * 100)) + '%' }} />
                 </div>
+
+                {showBudgetDetail && (
+                  <div className="mt-3 bg-blue-50 rounded-xl p-4 text-xs text-gray-600">
+                    <div className="font-medium text-gray-700 mb-2">📊 Calcul du budget calorique</div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>TMB (métabolisme de base)</span>
+                        <span className="font-medium">+{budget.tmb} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Effet thermique (digestion ~10%)</span>
+                        <span className="font-medium">+{Math.round(budget.tmb * 0.1)} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>👟 Pas ({(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')} pas)</span>
+                        <span className="font-medium">+{budget.kcalPas} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>🏋️ Sport du jour</span>
+                        <span className="font-medium">+{budget.kcalSport} kcal</span>
+                      </div>
+                      <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-gray-700">
+                        <span>Dépense totale</span>
+                        <span>{budget.depenseTotal} kcal</span>
+                      </div>
+                      <div className="flex justify-between text-red-500">
+                        <span>Déficit cible</span>
+                        <span>-{budget.deficitCible} kcal</span>
+                      </div>
+                      <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-blue-700">
+                        <span>Budget du jour</span>
+                        <span>{budget.budgetJour} kcal</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               
