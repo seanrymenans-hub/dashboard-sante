@@ -38,7 +38,7 @@ export default function SuggestionSeance({ seances, repas, poids, objectifs, com
           <div className="text-xs text-gray-400">Basé sur ton historique et ton bilan du jour</div>
         </div>
         <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
-          Gemini AI
+          IA
         </span>
       </div>
 
@@ -75,12 +75,16 @@ export default function SuggestionSeance({ seances, repas, poids, objectifs, com
             </span>
           </div>
 
-          <div className="flex gap-4 mb-3 text-sm text-gray-500">
-            <span>{suggestion.duree} min</span>
-            <span>{suggestion.type}</span>
+          <div className="flex gap-3 mb-3 flex-wrap">
+            <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{suggestion.duree} min</span>
+            {suggestion.distance && <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full">{suggestion.distance} km</span>}
+            {suggestion.allure && <span className="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-full">{suggestion.allure}</span>}
+            {suggestion.groupesCibles?.map(g => (
+              <span key={g} className="text-xs bg-purple-50 text-purple-600 px-3 py-1 rounded-full">{g}</span>
+            ))}
           </div>
 
-          <div className="text-sm text-gray-500 italic mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="text-sm text-gray-600 leading-relaxed mb-4 p-4 bg-gray-50 rounded-xl">
             {suggestion.raison}
           </div>
 
@@ -90,7 +94,10 @@ export default function SuggestionSeance({ seances, repas, poids, objectifs, com
               {suggestion.exercices.map((ex, i) => (
                 <div key={i} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
                   <span className="text-sm">{ex.nom}</span>
-                  <span className="text-xs text-gray-400">{ex.series}</span>
+                  <div className="flex gap-2">
+                    <span className="text-xs text-gray-600 font-medium">{ex.series}</span>
+                    {ex.repos && <span className="text-xs text-gray-400">· repos {ex.repos}</span>}
+                  </div>
                 </div>
               ))}
             </div>
