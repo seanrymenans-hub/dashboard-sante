@@ -21,7 +21,8 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
   }
 
   const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const repasAujourdhui = repas.filter(r => r.date === today)
   const kcalMange = budget.kcalConsommees
   const protMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.proteines || 0), 0))

@@ -14,7 +14,7 @@ const TABS = [
   { id: 'analyse', label: 'Analyse', emoji: '📈' },
 ]
 
-export default function NutritionLayout({ repas, objectifs, composition, poids, seances, onRefresh, planSemaine, onPlanUpdate }) {
+export default function NutritionLayout({ repas, objectifs, composition, poids, seances, onRefresh, planSemaine, onPlanUpdate, dailyBudgets }) {
   const [tab, setTab] = useState('aujourdhui')
 
   return (
@@ -37,7 +37,7 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
       </div>
 
       {tab === 'aujourdhui' && (
-        <NutritionAujourdhui repas={repas} objectifs={objectifs} seances={seances} onRefresh={onRefresh} />
+        <NutritionAujourdhui repas={repas} objectifs={objectifs} seances={seances} onRefresh={onRefresh} dailyBudgets={dailyBudgets} />
       )}
       {tab === 'suggestions' && (
         <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} />

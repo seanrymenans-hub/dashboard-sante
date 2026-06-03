@@ -90,10 +90,13 @@ export function computeHealthEngine(data: HealthData): HealthEngineOutput {
 
   const pasAujourdhui = pas?.find(p => p.date === today)
   const nbPas = pasAujourdhui?.nb_pas || 0
-  const kcalPas = pasAujourdhui?.calories_pas || Math.round(nbPas * 0.04) // ~0.04 kcal/pas
+  const pasDesCourses = seances
+    ?.filter(s => s.date === today && s.type === 'course')
+    ?.reduce((sum, s) => sum + Math.round((parseFloat(s.distance) || 0) * 1280), 0) || 0
+  const nbPasHorsCourse = Math.max(0, nbPas - pasDesCourses)
+  const kcalPas = Math.round(nbPasHorsCourse * 0.04)
 
   const tef = Math.round(tmb * 0.10)
-  console.log('today:', today, 'pas:', pas.slice(0, 3))
   const depenseTotal = tmb + kcalSport + kcalPas + tef
   const budgetJour = Math.max(1200, depenseTotal - deficitCible)
 

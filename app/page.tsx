@@ -14,6 +14,12 @@ import Streak from './components/Streak'
 import Parametres from './components/Parametres'
 import NutritionLayout from './components/NutritionLayout'
 import { computeHealthEngine } from '../lib/healthEngine'
+import CoachGlobal from './components/CoachGlobal'
+
+function getTodayStr() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
 
 export default function Home() {
   const [poids, setPoids] = useState<any[]>([])
@@ -22,20 +28,27 @@ export default function Home() {
   const [objectifs, setObjectifs] = useState<any>(null)
   const [composition, setComposition] = useState<any[]>([])
   const [pas, setPas] = useState<any[]>([])
+  const [hydratation, setHydratation] = useState<any[]>([])
+  const [dailyBudgets, setDailyBudgets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
   const [planSemaine, setPlanSemaine] = useState<any>(null)
+  const [coachSummary, setCoachSummary] = useState<any>(null)
   const [showBudgetDetail, setShowBudgetDetail] = useState(false)
 
   const fetchData = useCallback(async () => {
-    const [p, r, s, o, c, pa] = await Promise.all([
+    const today = getTodayStr()
+    const [p, r, s, o, c, pa, hy, db, ds] = await Promise.all([
       supabase.from('poids').select('*').order('date', { ascending: false }),
       supabase.from('repas').select('*').order('date', { ascending: false }),
       supabase.from('seances').select('*').order('date', { ascending: false }),
       supabase.from('objectifs').select('*').limit(1).single(),
       supabase.from('composition').select('*').order('date', { ascending: false }),
       supabase.from('pas').select('*').order('date', { ascending: false }),
+      supabase.from('hydratation').select('*').order('date', { ascending: false }),
+      supabase.from('daily_budget').select('*').order('date', { ascending: false }),
+      supabase.from('daily_summary').select('*').eq('date', today).maybeSingle(),
     ])
     setPoids(p.data || [])
     setRepas(r.data || [])
@@ -43,6 +56,12 @@ export default function Home() {
     setObjectifs(o.data || null)
     setComposition(c.data || [])
     setPas(pa.data || [])
+    setHydratation(hy.data || [])
+    setDailyBudgets(db.data || [])
+    if (ds.data?.summary) {
+      const parsed = typeof ds.data.summary === 'string' ? JSON.parse(ds.data.summary) : ds.data.summary
+      setCoachSummary(parsed)
+    }
     setLoading(false)
   }, [])
 
@@ -56,6 +75,20 @@ export default function Home() {
 
   const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas })
   const { budget, progression: prog, tendances, today } = engine
+
+  // Sauvegarder le budget du jour dans Supabase
+  supabase.from('daily_budget').upsert(
+    {
+      date: today,
+      budget_jour: budget.budgetJour,
+      tmb: budget.tmb,
+      kcal_pas: budget.kcalPas,
+      kcal_sport: budget.kcalSport,
+      tef: Math.round(budget.tmb * 0.1),
+      deficit_cible: budget.deficitCible,
+    },
+    { onConflict: 'date' }
+  )
 
   const pasAujourdhui = pas.find(p => p.date === today)
   const kcalAujourdhui = budget.kcalConsommees
@@ -148,8 +181,6 @@ export default function Home() {
                 )}
               </div>
 
-              
-
               <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
                 🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{prog.dateEstimeeObjectif?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Objectif atteint !'}</strong>
               </div>
@@ -178,6 +209,7 @@ export default function Home() {
             onRefresh={fetchData}
             planSemaine={planSemaine}
             onPlanUpdate={setPlanSemaine}
+            dailyBudgets={dailyBudgets}
           />
         )}
 
@@ -188,6 +220,23 @@ export default function Home() {
             <Sport seances={seances} onRefresh={fetchData} poids={poids} pas={pas} />
             <CourseAnalyse seances={seances} repas={repas} objectifs={objectifs} onRefresh={fetchData} />
           </div>
+        )}
+
+        {onglet === 'coach' && (
+          <CoachGlobal
+            poids={poids}
+            repas={repas}
+            seances={seances}
+            composition={composition}
+            objectifs={objectifs}
+            pas={pas}
+            hydratation={hydratation}
+            budget={budget}
+            progression={prog}
+            tendances={tendances}
+            summaryCache={coachSummary}
+            onSummaryUpdate={setCoachSummary}
+          />
         )}
 
         {showParametres && (

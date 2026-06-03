@@ -6,6 +6,7 @@ export default function Navigation({ ongletActif, setOnglet }) {
     { id: 'corps', label: 'Corps', emoji: '💪' },
     { id: 'nutrition', label: 'Nutrition', emoji: '🥗' },
     { id: 'sport', label: 'Sport', emoji: '🏃' },
+    { id: 'coach', label: 'Coach', emoji: '🤖' },
   ]
 
   return (

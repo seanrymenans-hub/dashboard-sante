@@ -3,21 +3,27 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { computeHealthEngine } from '../../lib/healthEngine'
 
-export default function NutritionAujourdhui({ repas, objectifs, onRefresh }) {
+export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets }) {
   const [nomAliment, setNomAliment] = useState('')
   const [typeRepas, setTypeRepas] = useState('dejeuner')
   const [preview, setPreview] = useState(null)
   const [loadingIA, setLoadingIA] = useState(false)
   const [loadingAjout, setLoadingAjout] = useState(false)
   const [showLogger, setShowLogger] = useState(false)
+  const [showBudgetDetail, setShowBudgetDetail] = useState(false)
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [selectedDate, setSelectedDate] = useState(todayStr)
   const repasAujourdhui = repas.filter(r => r.date === selectedDate)
   const isToday = selectedDate === todayStr
 
   const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
-  const kcalObj = isToday ? budget.budgetJour : (objectifs?.kcal_journalier || 1850)
+  const budgetHistorique = dailyBudgets?.find(b => b.date === selectedDate)
+  console.log('dailyBudgets:', dailyBudgets?.length, 'selectedDate:', selectedDate, 'budgetHistorique:', budgetHistorique)
+  const kcalObj = isToday 
+    ? budget.budgetJour 
+    : (budgetHistorique?.budget_jour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
   const protObj = objectifs?.proteines_objectif || 150
   const carbObj = objectifs?.glucides_objectif || 250
   const lipObj = objectifs?.lipides_objectif || 67
@@ -141,7 +147,11 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh }) {
               <div className="text-xl font-bold text-blue-700">{kcalMange}</div>
               <div className="text-xs text-blue-500 mt-1">kcal mangées</div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <div className="bg-gray-50 rounded-xl p-3 text-center relative">
+              <button
+                onClick={() => setShowBudgetDetail(!showBudgetDetail)}
+                className="absolute top-2 right-2 w-4 h-4 rounded-full bg-gray-200 text-gray-400 text-xs flex items-center justify-center hover:bg-blue-100 hover:text-blue-500"
+              >?</button>
               <div className="text-xl font-bold text-gray-700">{kcalObj}</div>
               <div className="text-xs text-gray-400 mt-1">kcal objectif</div>
             </div>
@@ -150,6 +160,31 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh }) {
               <div className="text-xs text-green-500 mt-1">kcal restantes</div>
             </div>
           </div>
+          {showBudgetDetail && (
+          <div className="mb-4 bg-blue-50 rounded-xl p-4 text-xs text-gray-600">
+            <div className="font-medium text-gray-700 mb-2">📊 Calcul du budget calorique</div>
+            {isToday ? (
+              <div className="space-y-1">
+                <div className="flex justify-between"><span>TMB</span><span>+{budget.tmb} kcal</span></div>
+                <div className="flex justify-between"><span>Effet thermique (~10%)</span><span>+{Math.round(budget.tmb * 0.1)} kcal</span></div>
+                <div className="flex justify-between"><span>👟 Pas</span><span>+{budget.kcalPas} kcal</span></div>
+                <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budget.kcalSport} kcal</span></div>
+                <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-gray-700"><span>Dépense totale</span><span>{budget.depenseTotal} kcal</span></div>
+                <div className="flex justify-between text-red-500"><span>Déficit cible</span><span>-{budget.deficitCible} kcal</span></div>
+                <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-blue-700"><span>Budget du jour</span><span>{kcalObj} kcal</span></div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="flex justify-between"><span>TMB</span><span>+{budgetHistorique?.tmb || objectifs?.tmb} kcal</span></div>
+                <div className="flex justify-between"><span>Effet thermique (~10%)</span><span>+{budgetHistorique?.tef || Math.round((objectifs?.tmb || 1875) * 0.1)} kcal</span></div>
+                <div className="flex justify-between"><span>👟 Pas</span><span>+{budgetHistorique?.kcal_pas || 0} kcal</span></div>
+                <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budgetHistorique?.kcal_sport || 0} kcal</span></div>
+                <div className="flex justify-between text-red-500"><span>Déficit cible</span><span>-{budgetHistorique?.deficit_cible || objectifs?.deficit_cible} kcal</span></div>
+                <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-blue-700"><span>Budget du jour</span><span>{kcalObj} kcal</span></div>
+              </div>
+            )}
+          </div>
+        )}
         </div>
 
         {/* Barres macros */}

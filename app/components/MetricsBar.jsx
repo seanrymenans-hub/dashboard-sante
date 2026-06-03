@@ -6,6 +6,7 @@ export default function MetricsBar({ poids, repas, seances, objectifs, pas }) {
   const [showDetail, setShowDetail] = useState(false)
   const { budget, progression: prog, today } = computeHealthEngine({ poids, repas, seances, composition: [], objectifs, pas })
   const pasAujourdhui = pas?.find(p => p.date === today)
+  console.log('MetricsBar - kcalPas:', budget.kcalPas, 'budgetJour:', budget.budgetJour, 'pas:', pas?.length)
 
   const seancesSemaine = seances?.filter(s => {
     const diff = (new Date().getTime() - new Date(s.date).getTime()) / (1000 * 60 * 60 * 24)

@@ -6,7 +6,8 @@ export default function Hydratation({ poids }) {
   const [ml, setMl] = useState(0)
   const [quantiteManuelle, setQuantiteManuelle] = useState('')
   const [loading, setLoading] = useState(false)
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   const poidsKg = poids?.[0]?.valeur || 82
   const objectifMl = Math.round(poidsKg * 35)
