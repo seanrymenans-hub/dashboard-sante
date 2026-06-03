@@ -154,7 +154,7 @@ export default function Home() {
               </div>
             </div>
 
-            <Streak repas={repas} objectifs={objectifs} />
+            <Streak repas={repas} objectifs={objectifs} pas={pas} seances={seances} />
             <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>
         )}

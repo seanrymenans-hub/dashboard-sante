@@ -1,8 +1,11 @@
 'use client'
 import { useMemo } from 'react'
 
-export default function Streak({ repas, objectifs }) {
-  const kcalObj = objectifs?.kcal_journalier || 1850
+export default function Streak({ repas, objectifs, pas, seances }) {
+  const tmb = objectifs?.tmb || 1875
+  const tef = Math.round(tmb * 0.10)
+  const kcalPasMoy = pas?.slice(0, 7).reduce((s, p) => s + (p.calories_pas || 0), 0) / Math.max(1, Math.min(7, pas?.length || 1))
+  const kcalObj = Math.max(1200, tmb + tef + Math.round(kcalPasMoy) - (objectifs?.deficit_cible || 750))
 
   const stats = useMemo(() => {
     const parJour = {}
@@ -32,8 +35,28 @@ export default function Streak({ repas, objectifs }) {
 
     const tauxReussite = jours.length > 0 ? Math.round(totalJoursReussis / jours.length * 100) : 0
 
-    return { streak, record, totalJoursReussis, tauxReussite, totalJours: jours.length }
-  }, [repas, kcalObj])
+    // Streak jours actifs (objectif pas)
+    const objectifPas = objectifs?.objectif_pas || 10000
+    const pasParJour = {}
+    pas?.forEach(p => { pasParJour[p.date] = p.nb_pas })
+    const joursAvecPas = Object.keys(pasParJour).sort((a, b) => b.localeCompare(a))
+    let streakActif = 0
+    for (let i = 0; i < joursAvecPas.length; i++) {
+      if (pasParJour[joursAvecPas[i]] >= objectifPas) {
+        if (i === 0 || streakActif === i) streakActif++
+        else break
+      } else break
+    }
+
+    // Séances cette semaine
+    const seancesSemaine = seances?.filter(s => {
+      const diff = (new Date().getTime() - new Date(s.date).getTime()) / (1000 * 60 * 60 * 24)
+      return diff <= 7
+    }).length || 0
+
+    return { streak, record, totalJoursReussis, tauxReussite, totalJours: jours.length, streakActif, seancesSemaine }
+  console.log('pas dans streak:', pas?.length, joursAvecPas)
+  }, [repas, kcalObj, pas, seances, objectifs])
 
   const badges = [
     { label: '1er jour', emoji: '🌱', seuil: 1, atteint: stats.record >= 1 },
@@ -48,18 +71,22 @@ export default function Streak({ repas, objectifs }) {
     <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
       <div className="font-medium mb-4">Streak & motivation</div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-orange-50 rounded-xl p-4 text-center">
           <div className="text-3xl font-bold text-orange-500">{stats.streak}</div>
-          <div className="text-xs text-orange-400 mt-1">jours consécutifs 🔥</div>
+          <div className="text-xs text-orange-400 mt-1">jours nutrition 🔥</div>
         </div>
         <div className="bg-purple-50 rounded-xl p-4 text-center">
           <div className="text-3xl font-bold text-purple-500">{stats.record}</div>
           <div className="text-xs text-purple-400 mt-1">record personnel 🏆</div>
         </div>
+        <div className="bg-green-50 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-green-500">{stats.streakActif}</div>
+          <div className="text-xs text-green-400 mt-1">jours actifs 👟</div>
+        </div>
         <div className="bg-blue-50 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-blue-500">{stats.tauxReussite}%</div>
-          <div className="text-xs text-blue-400 mt-1">taux de réussite</div>
+          <div className="text-3xl font-bold text-blue-500">{stats.seancesSemaine}</div>
+          <div className="text-xs text-blue-400 mt-1">séances cette semaine 🏋️</div>
         </div>
       </div>
 
@@ -79,7 +106,7 @@ export default function Streak({ repas, objectifs }) {
       </div>
 
       <div className="text-xs text-gray-400 p-3 bg-gray-50 rounded-lg">
-        Un jour est "réussi" quand tu respectes ton objectif calorique de {kcalObj} kcal.
+        Un jour est "réussi" quand tu respectes ton budget calorique dynamique (~{kcalObj} kcal en moyenne).
         Tu as réussi <strong className="text-gray-600">{stats.totalJoursReussis} jours</strong> sur {stats.totalJours} jours trackés.
       </div>
     </div>
