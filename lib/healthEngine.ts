@@ -77,7 +77,8 @@ export interface HealthEngineOutput {
 
 export function computeHealthEngine(data: HealthData): HealthEngineOutput {
   const { poids, repas, seances, composition, objectifs, pas = [], hydratation = [] } = data
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   // ---- BUDGET JOURNALIER ----
   const tmb = objectifs?.tmb || 1875
@@ -92,6 +93,7 @@ export function computeHealthEngine(data: HealthData): HealthEngineOutput {
   const kcalPas = pasAujourdhui?.calories_pas || Math.round(nbPas * 0.04) // ~0.04 kcal/pas
 
   const tef = Math.round(tmb * 0.10)
+  console.log('today:', today, 'pas:', pas.slice(0, 3))
   const depenseTotal = tmb + kcalSport + kcalPas + tef
   const budgetJour = Math.max(1200, depenseTotal - deficitCible)
 
