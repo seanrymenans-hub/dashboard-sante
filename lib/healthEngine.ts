@@ -87,10 +87,12 @@ export function computeHealthEngine(data: HealthData): HealthEngineOutput {
     ?.filter(s => s.date === today)
     ?.reduce((s: number, r: any) => s + (r.kcal || 0), 0) || 0
 
-  const pasAujourdhui = pas?.find(p => p.date === today)?.nb_pas || 0
-  const kcalPas = Math.round(pasAujourdhui * 0.04) // ~0.04 kcal/pas
+  const pasAujourdhui = pas?.find(p => p.date === today)
+  const nbPas = pasAujourdhui?.nb_pas || 0
+  const kcalPas = pasAujourdhui?.calories_pas || Math.round(nbPas * 0.04) // ~0.04 kcal/pas
 
-  const depenseTotal = tmb + kcalSport + kcalPas
+  const tef = Math.round(tmb * 0.10)
+  const depenseTotal = tmb + kcalSport + kcalPas + tef
   const budgetJour = Math.max(1200, depenseTotal - deficitCible)
 
   const kcalConsommees = repas

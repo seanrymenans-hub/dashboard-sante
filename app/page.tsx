@@ -20,24 +20,27 @@ export default function Home() {
   const [seances, setSeances] = useState<any[]>([])
   const [objectifs, setObjectifs] = useState<any>(null)
   const [composition, setComposition] = useState<any[]>([])
+  const [pas, setPas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showParametres, setShowParametres] = useState(false)
   const [onglet, setOnglet] = useState('accueil')
   const [planSemaine, setPlanSemaine] = useState<any>(null)
 
   const fetchData = useCallback(async () => {
-    const [p, r, s, o, c] = await Promise.all([
+    const [p, r, s, o, c, pa] = await Promise.all([
       supabase.from('poids').select('*').order('date', { ascending: false }),
       supabase.from('repas').select('*').order('date', { ascending: false }),
       supabase.from('seances').select('*').order('date', { ascending: false }),
       supabase.from('objectifs').select('*').limit(1).single(),
       supabase.from('composition').select('*').order('date', { ascending: false }),
+      supabase.from('pas').select('*').order('date', { ascending: false }),
     ])
     setPoids(p.data || [])
     setRepas(r.data || [])
     setSeances(s.data || [])
     setObjectifs(o.data || null)
     setComposition(c.data || [])
+    setPas(pa.data || [])
     setLoading(false)
   }, [])
 
@@ -49,12 +52,10 @@ export default function Home() {
     </div>
   )
 
-  const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs })
+  const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas })
   const { budget, progression: prog, tendances, today } = engine
 
-  const dernierPoids = prog.poidsActuel
-  const objectifPoids = prog.poidsObjectif
-  const poidsDepart = prog.poidsDepart
+  const pasAujourdhui = pas.find(p => p.date === today)
   const kcalAujourdhui = budget.kcalConsommees
   const kcalObj = budget.budgetJour
 
@@ -77,12 +78,13 @@ export default function Home() {
 
         {onglet === 'accueil' && (
           <div>
-            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} />
+            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
+
             <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
               <div className="font-medium mb-4">Progression vers l'objectif</div>
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-500">Poids · {poidsDepart} → {objectifPoids} kg</span>
+                  <span className="text-gray-500">Poids · {prog.poidsDepart} → {prog.poidsObjectif} kg</span>
                   <span className="font-medium">{prog.progressionPct}%</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded">
@@ -92,7 +94,8 @@ export default function Home() {
                   {prog.kgPerdus.toFixed(1)} kg perdus · {prog.kgRestants.toFixed(1)} kg restants
                 </div>
               </div>
-              <div className="mb-2">
+
+              <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Calories aujourd'hui</span>
                   <span className="font-medium">{kcalAujourdhui} / {kcalObj} kcal</span>
@@ -101,10 +104,14 @@ export default function Home() {
                   <div className="h-2 bg-blue-400 rounded transition-all" style={{ width: Math.min(100, Math.round(kcalAujourdhui / kcalObj * 100)) + '%' }} />
                 </div>
               </div>
-              <div className="text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded-lg">
+
+              
+
+              <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
                 🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{prog.dateEstimeeObjectif?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Objectif atteint !'}</strong>
               </div>
             </div>
+
             <Streak repas={repas} objectifs={objectifs} />
             <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>

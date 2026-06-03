@@ -21,13 +21,31 @@ export default function WithingsSync({ onRefresh }) {
   }, [])
 
   async function synchroniser() {
-    setLoading(true)
+    setLoading('all')
     setSucces(null)
     try {
       const res = await fetch('/api/withings/sync')
       const data = await res.json()
       if (data.success) {
-        setSucces(`✓ ${data.total} mesures synchronisées`)
+        setSucces(`✓ ${data.total} mesures · ${data.pasSynced} jours de pas`)
+        onRefresh()
+      } else {
+        setSucces('Erreur : ' + (data.error || 'inconnue'))
+      }
+    } catch {
+      setSucces('Erreur de connexion')
+    }
+    setLoading(false)
+  }
+
+  async function synchroniserPas() {
+    setLoading('pas')
+    setSucces(null)
+    try {
+      const res = await fetch('/api/withings/sync?pas=1')
+      const data = await res.json()
+      if (data.success) {
+        setSucces(`✓ ${data.pasSynced} jours de pas synchronisés`)
         onRefresh()
       } else {
         setSucces('Erreur : ' + (data.error || 'inconnue'))
@@ -50,9 +68,14 @@ export default function WithingsSync({ onRefresh }) {
       <div className="flex items-center gap-2">
         {succes && <span className="text-xs text-gray-400">{succes}</span>}
         {connecte ? (
-          <button onClick={synchroniser} disabled={loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-            {loading ? 'Sync...' : '↻ Synchroniser'}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={synchroniserPas} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
+              {loading === 'pas' ? 'Sync...' : '👟 Pas'}
+            </button>
+            <button onClick={synchroniser} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
+              {loading === 'all' ? 'Sync...' : '↻ Synchroniser'}
+            </button>
+          </div>
         ) : (
           <a href="/api/withings/auth" className="text-sm bg-black text-white rounded-lg px-4 py-1.5">
             Connecter Withings

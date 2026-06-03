@@ -1,7 +1,8 @@
 import { computeHealthEngine } from '../../lib/healthEngine'
 
-export default function MetricsBar({ poids, repas, seances, objectifs }) {
-  const { budget, progression: prog } = computeHealthEngine({ poids, repas, seances, composition: [], objectifs })
+export default function MetricsBar({ poids, repas, seances, objectifs, pas }) {
+  const { budget, progression: prog, today } = computeHealthEngine({ poids, repas, seances, composition: [], objectifs, pas })
+  const pasAujourdhui = pas?.find(p => p.date === today)
 
   const seancesSemaine = seances?.filter(s => {
     const diff = (new Date().getTime() - new Date(s.date).getTime()) / (1000 * 60 * 60 * 24)
@@ -9,7 +10,7 @@ export default function MetricsBar({ poids, repas, seances, objectifs }) {
   }).length || 0
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-5 gap-4 mb-8">
       <div className="bg-white rounded-xl border border-gray-100 p-4">
         <div className="text-xs text-gray-400 mb-1">Poids actuel</div>
         <div className="text-2xl font-medium">{prog.poidsActuel} kg</div>
@@ -31,6 +32,11 @@ export default function MetricsBar({ poids, repas, seances, objectifs }) {
         <div className="text-xs text-gray-400 mb-1">Séances cette semaine</div>
         <div className="text-2xl font-medium">{seancesSemaine}</div>
         <div className="text-xs text-gray-400 mt-1">/ 4 objectif</div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <div className="text-xs text-gray-400 mb-1">Pas aujourd'hui</div>
+        <div className="text-2xl font-medium">{(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')}</div>
+        <div className="text-xs text-gray-400 mt-1">objectif {(objectifs?.objectif_pas || 10000).toLocaleString('fr-FR')}</div>
       </div>
     </div>
   )

@@ -30,15 +30,54 @@ async function refreshToken(token) {
 }
 
 export async function GET(request) {
+  const url = new URL(request.url)
+  const syncPasOnly = url.searchParams.get('pas') === '1'
+
   const { data: tokens } = await supabase.from('withings_tokens').select('*').limit(1).single()
   if (!tokens) return Response.json({ error: 'Non connecté à Withings' }, { status: 401 })
 
   const access_token = await refreshToken(tokens)
   const startdate = Math.floor(Date.now() / 1000) - 90 * 24 * 60 * 60
+  const startdateStr = new Date(startdate * 1000).toISOString().split('T')[0]
+  const enddateStr = new Date().toISOString().split('T')[0]
 
-  const measRes = await fetch('https://wbsapi.withings.net/measure?action=getmeas&meastypes=1,5,6,8,71,73,76,77,88,174,175,176&category=1&startdate=' + startdate, {
-    headers: { 'Authorization': `Bearer ${access_token}` }
-  })
+  // Sync des pas via API activity
+  const actRes = await fetch(
+    `https://wbsapi.withings.net/v2/measure?action=getactivity&startdateymd=${startdateStr}&enddateymd=${enddateStr}&data_fields=steps,calories,distance`,
+    { headers: { 'Authorization': `Bearer ${access_token}` } }
+  )
+  const actData = await actRes.json()
+  let pasSynced = 0
+
+  console.log('Withings activity response:', JSON.stringify(actData))
+  if (actData.status === 0 && actData.body?.activities) {
+    for (const activity of actData.body.activities) {
+      if (activity.steps > 0) {
+        await supabase.from('pas').upsert(
+          {
+            date: activity.date,
+            nb_pas: activity.steps,
+            calories_pas: Math.round(activity.calories || 0),
+            distance_m: Math.round(activity.distance || 0),
+            source: 'withings'
+          },
+          { onConflict: 'date' }
+        )
+        pasSynced++
+      }
+    }
+  }
+
+  // Si sync pas uniquement, on retourne ici
+  if (syncPasOnly) {
+    return Response.json({ success: true, pasSynced })
+  }
+
+  // Sync mesures corporelles
+  const measRes = await fetch(
+    'https://wbsapi.withings.net/measure?action=getmeas&meastypes=1,5,6,8,71,73,76,77,88,174,175,176&category=1&startdate=' + startdate,
+    { headers: { 'Authorization': `Bearer ${access_token}` } }
+  )
 
   const measData = await measRes.json()
   if (measData.status !== 0) {
@@ -46,13 +85,6 @@ export async function GET(request) {
   }
 
   const groups = measData.body?.measuregrps || []
-
-  if (request.url.includes('debug=1')) {
-    const allTypes = groups.flatMap(g => g.measures.map(m => ({ type: m.type, val: m.value * Math.pow(10, m.unit) })))
-    const uniqueTypes = [...new Map(allTypes.map(t => [t.type, t])).values()]
-    return Response.json({ types: uniqueTypes, sample: groups.slice(0, 2) })
-  }
-
   let synced = 0
 
   for (const group of groups) {
@@ -77,7 +109,7 @@ export async function GET(request) {
 
     const compFields = ['masse_grasse_pct', 'masse_musculaire', 'masse_hydrique', 'masse_osseuse']
     if (compFields.some(f => measures[f] !== undefined)) {
-      const { data: existing } = await supabase.from('composition').select('*').eq('date', date).single()
+      const { data: existing } = await supabase.from('composition').select('*').eq('date', date).maybeSingle()
       const poids = measures.poids || 82.3
 
       const masse_grasse_pct = measures.masse_grasse_pct ?? existing?.masse_grasse_pct ?? 0
@@ -105,5 +137,5 @@ export async function GET(request) {
     }
   }
 
-  return Response.json({ success: true, synced, total: groups.length })
+  return Response.json({ success: true, synced, total: groups.length, pasSynced })
 }

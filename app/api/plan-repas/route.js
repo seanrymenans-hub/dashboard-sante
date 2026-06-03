@@ -118,10 +118,11 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
     const text = data.choices?.[0]?.message?.content || ''
     const clean = text.replace(/```json|```/g, '').trim()
     const result = JSON.parse(clean)
-    await supabase.from('meal_plans').upsert(
+    const { error: upsertError } = await supabase.from('meal_plans').upsert(
       { semaine, plan: result.jours, liste_courses: result.listeCourses },
       { onConflict: 'semaine' }
     )
+    if (upsertError) console.error('Upsert error:', upsertError)
     return Response.json(result)
   } catch(e) {
     return Response.json({ error: e.message }, { status: 500 })
