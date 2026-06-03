@@ -7,6 +7,7 @@ import MetricsBar from './components/MetricsBar'
 import GraphiquePoids from './components/GraphiquePoids'
 import Composition from './components/Composition'
 import Sport from './components/Sport'
+import CourseAnalyse from './components/CourseAnalyse'
 import SuggestionSeance from './components/SuggestionSeance'
 import CoachIA from './components/CoachIA'
 import Streak from './components/Streak'
@@ -185,6 +186,7 @@ export default function Home() {
             <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
             <WithingsSync onRefresh={fetchData} syncPasOnly={true} />
             <Sport seances={seances} onRefresh={fetchData} poids={poids} pas={pas} />
+            <CourseAnalyse seances={seances} repas={repas} objectifs={objectifs} onRefresh={fetchData} />
           </div>
         )}
 
