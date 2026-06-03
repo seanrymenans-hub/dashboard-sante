@@ -1,8 +1,31 @@
 'use client'
+import { useState } from 'react'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
 import { computeHealthEngine } from '../../lib/healthEngine'
 export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition }) {
+  const [synthese, setSynthese] = useState(null)
+  const [loadingIA, setLoadingIA] = useState(false)
+
+  async function genererSynthese() {
+    setLoadingIA(true)
+
+    // Calculer le budget moyen sur 7 jours
+    const budgetMoyen7j = Math.round(
+      (budget.tmb + Math.round(budget.tmb * 0.1) - (objectifs?.deficit_cible || 750))
+    )
+
+    try {
+      const res = await fetch('/api/analyse-nutrition', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repas, objectifs, tendances, budgetMoyen7j })
+      })
+      const data = await res.json()
+      if (data.bilan) setSynthese(data)
+    } catch(e) { console.error(e) }
+    setLoadingIA(false)
+  }
 
   const { tendances, budget } = computeHealthEngine({ poids, repas, seances, composition, objectifs })
   const kcalObj = budget.budgetJour
@@ -70,6 +93,62 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
       {/* Graphiques */}
       <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
       <GraphiqueMacros repas={repas} objectifs={objectifs} />
+
+      {/* Synthèse IA */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
+          <div>
+            <div className="font-medium">Synthèse IA</div>
+            <div className="text-xs text-gray-400 mt-1">Analyse personnalisée de tes habitudes nutritionnelles</div>
+          </div>
+          <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">IA</span>
+        </div>
+        <div className="px-6 py-4">
+          {!synthese && (
+            <div className="text-center py-4">
+              <button
+                onClick={genererSynthese}
+                disabled={loadingIA}
+                className="bg-black text-white rounded-lg px-6 py-2 text-sm disabled:opacity-40"
+              >
+                {loadingIA ? 'Analyse en cours...' : 'Générer ma synthèse ✨'}
+              </button>
+            </div>
+          )}
+          {synthese && (
+            <div>
+              <div className="bg-gray-50 rounded-xl p-4 mb-3">
+                <div className="text-sm text-gray-700 leading-relaxed">{synthese.bilan}</div>
+              </div>
+              {synthese.positifs?.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-xs font-medium text-green-600 mb-2">✓ Ce qui va bien</div>
+                  {synthese.positifs.map((p, i) => (
+                    <div key={i} className="flex items-start gap-2 mb-1">
+                      <span className="text-green-500 text-sm">✓</span>
+                      <span className="text-sm text-gray-600">{p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {synthese.conseils?.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-purple-600 mb-2">💡 Conseils</div>
+                  {synthese.conseils.map((c, i) => (
+                    <div key={i} className="border border-gray-100 rounded-xl p-3 mb-2">
+                      <div className="text-sm font-medium text-gray-800 mb-1">{c.titre}</div>
+                      <div className="text-xs text-gray-500">{c.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setSynthese(null)} className="text-xs text-gray-400 underline mt-2">
+                Regénérer
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
