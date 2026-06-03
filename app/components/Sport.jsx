@@ -12,7 +12,7 @@ const EXERCICES_LIST = [
 
 const EXERCICES_SECONDES = ['Gainage', 'Gainage côté droit', 'Gainage côté gauche']
 
-export default function Sport({ seances, onRefresh, poids }) {
+export default function Sport({ seances, onRefresh, poids, pas }) {
   const [type, setType] = useState('course')
   const [nom, setNom] = useState('')
   const [duree, setDuree] = useState(30)
@@ -120,17 +120,34 @@ export default function Sport({ seances, onRefresh, poids }) {
 
   const exercicesRemplis = exercices.some(e => e.nom.trim() !== '')
 
+  const today = new Date().toISOString().split('T')[0]
+  const pasAujourdhui = pas?.find(p => p.date === today)
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-medium">Sport cette semaine</div>
-          <div className="text-xs text-gray-400">{totalMin} min · {totalKcal} kcal brûlées</div>
+    <div className="flex flex-col gap-4">
+
+      {/* Activité du jour — Withings */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="font-medium">Activité du jour</div>
+          <span className="text-xs text-gray-400">Withings</span>
         </div>
-        <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
-          {seancesSemaine.length} séances
-        </span>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-blue-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-blue-700">{(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')}</div>
+            <div className="text-xs text-blue-500 mt-1">👟 pas</div>
+          </div>
+          <div className="bg-green-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-green-700">{Math.round((pasAujourdhui?.distance_m || 0) / 100) / 10}</div>
+            <div className="text-xs text-green-500 mt-1">🗺️ km parcourus</div>
+          </div>
+          <div className="bg-orange-50 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-orange-700">{pasAujourdhui?.calories_pas || 0}</div>
+            <div className="text-xs text-orange-500 mt-1">🔥 kcal brûlées</div>
+          </div>
+        </div>
       </div>
+
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
 
       <div className="mb-4">
         <div className="flex justify-between text-xs text-gray-400 mb-1">
@@ -320,6 +337,7 @@ export default function Sport({ seances, onRefresh, poids }) {
           {loading ? '...' : '+ Ajouter la séance'}
         </button>
       </div>
+    </div>
     </div>
   )
 }

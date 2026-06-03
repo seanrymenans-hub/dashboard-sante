@@ -119,7 +119,7 @@ export default function Home() {
 
         {onglet === 'corps' && (
           <div>
-            <WithingsSync onRefresh={fetchData} />
+            <WithingsSync onRefresh={fetchData} syncPasOnly={false} />
             <Composition composition={composition} onRefresh={fetchData} />
             <GraphiquePoids poids={poids} objectifs={objectifs} />
           </div>
@@ -141,7 +141,8 @@ export default function Home() {
         {onglet === 'sport' && (
           <div>
             <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
-            <Sport seances={seances} onRefresh={fetchData} poids={poids} />
+            <WithingsSync onRefresh={fetchData} syncPasOnly={true} />
+            <Sport seances={seances} onRefresh={fetchData} poids={poids} pas={pas} />
           </div>
         )}
 

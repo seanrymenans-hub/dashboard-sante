@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 
-export default function WithingsSync({ onRefresh }) {
+export default function WithingsSync({ onRefresh, syncPasOnly = false }) {
   const [connecte, setConnecte] = useState(false)
   const [loading, setLoading] = useState(false)
   const [succes, setSucces] = useState(null)
@@ -62,19 +62,23 @@ export default function WithingsSync({ onRefresh }) {
         <div className={`w-2 h-2 rounded-full ${connecte ? 'bg-green-500' : 'bg-gray-300'}`} />
         <div>
           <div className="text-sm font-medium">Withings</div>
-          <div className="text-xs text-gray-400">{connecte ? 'Connecté · poids et composition auto' : 'Non connecté'}</div>
+          <div className="text-xs text-gray-400">{connecte ? (syncPasOnly ? 'Connecté · pas et activité' : 'Connecté · poids et composition auto') : 'Non connecté'}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
         {succes && <span className="text-xs text-gray-400">{succes}</span>}
         {connecte ? (
           <div className="flex gap-2">
-            <button onClick={synchroniserPas} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-              {loading === 'pas' ? 'Sync...' : '👟 Pas'}
-            </button>
-            <button onClick={synchroniser} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-              {loading === 'all' ? 'Sync...' : '↻ Synchroniser'}
-            </button>
+            {!syncPasOnly && (
+              <button onClick={synchroniser} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
+                {loading === 'all' ? 'Sync...' : '↻ Synchroniser'}
+              </button>
+            )}
+            {syncPasOnly && (
+              <button onClick={synchroniserPas} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
+                {loading === 'pas' ? 'Sync...' : '👟 Sync pas'}
+              </button>
+            )}
           </div>
         ) : (
           <a href="/api/withings/auth" className="text-sm bg-black text-white rounded-lg px-4 py-1.5">
