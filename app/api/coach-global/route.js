@@ -10,7 +10,8 @@ export async function POST(request) {
 
   const { poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances } = context
 
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const dernierPoids = poids?.[0]?.valeur || '?'
   const pasAujourdhui = pas?.find(p => p.date === today)
   const hydAujourdhui = hydratation?.find(h => h.date === today)
