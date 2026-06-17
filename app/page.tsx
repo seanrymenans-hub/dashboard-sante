@@ -74,7 +74,7 @@ export default function Home() {
   )
 
   const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas })
-  const { budget, progression: prog, tendances, today } = engine
+  const { budget, progression: prog, tendances, macros, today } = engine
 
   // Sauvegarder le budget du jour dans Supabase
   supabase.from('daily_budget').upsert(
@@ -212,6 +212,7 @@ export default function Home() {
             dailyBudgets={dailyBudgets}
             budgetJour={budget.budgetJour}
             budget={budget}
+            macros={macros}
           />
         )}
 
@@ -236,6 +237,7 @@ export default function Home() {
             budget={budget}
             progression={prog}
             tendances={tendances}
+            macros={macros}
             summaryCache={coachSummary}
             onSummaryUpdate={setCoachSummary}
           />

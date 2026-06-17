@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
-export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour = 0, budget }) {
+export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour = 0, budget, macros }) {
   const [nomAliment, setNomAliment] = useState('')
   const [typeRepas, setTypeRepas] = useState('dejeuner')
   const [preview, setPreview] = useState(null)
@@ -21,9 +21,9 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
   const kcalObj = isToday 
     ? (budgetJour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
     : (budgetHistorique?.budget_jour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
-  const protObj = objectifs?.proteines_objectif || 150
-  const carbObj = objectifs?.glucides_objectif || 250
-  const lipObj = objectifs?.lipides_objectif || 67
+  const protObj = macros?.proteines || 166
+  const carbObj = macros?.glucides || 91
+  const lipObj = macros?.lipides || 38
 
   const kcalMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.kcal || 0), 0))
   const protMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.proteines || 0), 0))

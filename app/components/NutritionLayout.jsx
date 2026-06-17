@@ -14,7 +14,7 @@ const TABS = [
   { id: 'analyse', label: 'Analyse', emoji: '📈' },
 ]
 
-export default function NutritionLayout({ repas, objectifs, composition, poids, seances, onRefresh, planSemaine, onPlanUpdate, dailyBudgets, budgetJour = 0, budget }) {
+export default function NutritionLayout({ repas, objectifs, composition, poids, seances, onRefresh, planSemaine, onPlanUpdate, dailyBudgets, budgetJour = 0, budget, macros }) {
   const [tab, setTab] = useState('aujourdhui')
 
   return (
@@ -37,19 +37,19 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
       </div>
 
       {tab === 'aujourdhui' && (
-        <NutritionAujourdhui repas={repas} objectifs={objectifs} seances={seances} onRefresh={onRefresh} dailyBudgets={dailyBudgets} budgetJour={budgetJour} budget={budget} />
+        <NutritionAujourdhui repas={repas} objectifs={objectifs} seances={seances} onRefresh={onRefresh} dailyBudgets={dailyBudgets} budgetJour={budgetJour} budget={budget} macros={macros} />
       )}
       {tab === 'suggestions' && (
-        <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} />
+        <NutritionSuggestions repas={repas} objectifs={objectifs} composition={composition} poids={poids} macros={macros} />
       )}
       {tab === 'plan' && (
-        <PlanRepas objectifs={objectifs} poids={poids} composition={composition} planCache={planSemaine} onPlanUpdate={onPlanUpdate} />
+        <PlanRepas objectifs={objectifs} poids={poids} composition={composition} planCache={planSemaine} onPlanUpdate={onPlanUpdate} macros={macros} />
       )}
       {tab === 'hydratation' && (
         <Hydratation poids={poids} />
       )}
       {tab === 'analyse' && (
-        <NutritionAnalyse repas={repas} objectifs={objectifs} seances={seances} poids={poids} composition={composition} />
+        <NutritionAnalyse repas={repas} objectifs={objectifs} seances={seances} poids={poids} composition={composition} macros={macros} />
       )}
     </div>
   )

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
 import { computeHealthEngine } from '../../lib/healthEngine'
-export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition }) {
+export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros }) {
   const [synthese, setSynthese] = useState(null)
   const [loadingIA, setLoadingIA] = useState(false)
 
@@ -77,7 +77,7 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
         <div className="grid grid-cols-2 gap-4">
           {[
             { label: 'Moy. calories / jour (7j)', value: moyKcal7, unit: 'kcal', obj: kcalObj },
-            { label: 'Moy. protéines / jour (7j)', value: moyProt7, unit: 'g', obj: objectifs?.proteines_objectif || 150 },
+            { label: 'Moy. protéines / jour (7j)', value: moyProt7, unit: 'g', obj: macros?.proteines || 166 },
           ].map(item => (
             <div key={item.label} className="bg-gray-50 rounded-xl p-4">
               <div className="text-xs text-gray-400 mb-2">{item.label}</div>

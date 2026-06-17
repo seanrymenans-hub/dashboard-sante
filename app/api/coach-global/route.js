@@ -8,7 +8,7 @@ const supabase = createClient(
 export async function POST(request) {
   const { messages, context, generateSummary } = await request.json()
 
-  const { poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances } = context
+  const { poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances, macros } = context
 
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -52,10 +52,10 @@ COMPOSITION CORPORELLE (dernière mesure) :
 - Masse musculaire : ${composition?.[0]?.masse_musculaire || '?'} kg
 - Masse hydrique : ${composition?.[0]?.masse_hydrique || '?'} kg
 
-OBJECTIFS NUTRITIONNELS (configurés par l'utilisateur, peuvent changer) :
-- Protéines : ${objectifs?.proteines_objectif || 150}g
-- Glucides : ${objectifs?.glucides_objectif || 200}g
-- Lipides : ${objectifs?.lipides_objectif || 60}g
+OBJECTIFS NUTRITIONNELS (dynamiques selon le budget du jour) :
+- Protéines : ${macros?.proteines || 166}g (2g/kg, fixe)
+- Glucides : ${macros?.glucides || 91}g (variable selon budget)
+- Lipides : ${macros?.lipides || 38}g (25% du budget)
 - Budget calorique aujourd'hui : ${budget?.budgetJour || '?'} kcal (dynamique selon pas + sport)
 
 Tu es concis, direct et personnalisé. Tu utilises les vraies données dans chaque réponse.`

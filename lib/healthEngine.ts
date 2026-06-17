@@ -25,6 +25,12 @@ export interface DailyBudget {
   surplusOuDeficit: number
 }
 
+export interface MacrosObjectif {
+  proteines: number
+  lipides: number
+  glucides: number
+}
+
 export interface ProgressionData {
   poidsActuel: number
   poidsObjectif: number
@@ -68,6 +74,7 @@ export interface HealthEngineOutput {
   budget: DailyBudget
   progression: ProgressionData
   tendances: TendancesData
+  macros: MacrosObjectif
   today: string
 }
 
@@ -194,5 +201,17 @@ export function computeHealthEngine(data: HealthData): HealthEngineOutput {
     pctRespect30j: dates30j.length > 0 ? Math.round(joursRespectés30j / dates30j.length * 100) : 0,
   }
 
-  return { budget, progression, tendances, today }
+// ---- MACROS OBJECTIF DYNAMIQUES ----
+  const poidsActuelMacros = poids?.[0]?.valeur || 83
+  const protObj = Math.round(poidsActuelMacros * 2) // 2g/kg
+  const lipObj = Math.round(budgetJour * 0.25 / 9)  // 25% du budget en lipides
+  const glucObj = Math.round((budgetJour - protObj * 4 - lipObj * 9) / 4) // reste en glucides
+
+  const macros: MacrosObjectif = {
+    proteines: protObj,
+    lipides: lipObj,
+    glucides: Math.max(0, glucObj)
+  }
+  
+  return { budget, progression, tendances, macros, today }
 }

@@ -5,14 +5,14 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY
 )
 export async function POST(request) {
-  const { objectifs, poids, composition, semaine, jours } = await request.json()
+  const { objectifs, poids, composition, semaine, jours, macros } = await request.json()
   console.log('Jours reçus par API:', jours.map(j => j.nom))
   const preferences = objectifs?.preferences_alimentaires || ''
 
   const kcalObj = objectifs?.kcal_journalier || 1850
-  const protObj = objectifs?.proteines_objectif || 150
-  const carbObj = objectifs?.glucides_objectif || 200
-  const lipObj = objectifs?.lipides_objectif || 60
+  const protObj = macros?.proteines || 166
+  const carbObj = macros?.glucides || 91
+  const lipObj = macros?.lipides || 38
   const masseMusculaire = composition?.masse_musculaire || 60
 
   const joursStr = jours.map((j, idx) => {

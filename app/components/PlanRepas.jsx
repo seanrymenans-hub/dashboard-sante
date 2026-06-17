@@ -16,7 +16,7 @@ function getLundiSemaine() {
   return lundi.toISOString().split('T')[0]
 }
 
-export default function PlanRepas({ objectifs, poids, composition, planCache, onPlanUpdate }) {
+export default function PlanRepas({ objectifs, poids, composition, planCache, onPlanUpdate, macros }) {
   const [plan, setPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -83,6 +83,7 @@ export default function PlanRepas({ objectifs, poids, composition, planCache, on
           poids: poids?.[0]?.valeur || 82,
           composition: composition?.[0],
           semaine,
+          macros,
           jours: config
             .filter(j => j.actif === true && REPAS_TYPES.some(r => j.repas[r.id].actif))
             .map(j => ({

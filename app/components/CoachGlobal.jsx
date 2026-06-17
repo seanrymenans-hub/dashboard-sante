@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 
-export default function CoachGlobal({ poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances, summaryCache, onSummaryUpdate }) {
+export default function CoachGlobal({ poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances, macros, summaryCache, onSummaryUpdate }) {
   const [summary, setSummary] = useState(null)
   const [loadingSummary, setLoadingSummary] = useState(true)
   const [messages, setMessages] = useState([])
@@ -10,7 +10,7 @@ export default function CoachGlobal({ poids, repas, seances, composition, object
   const [loadingChat, setLoadingChat] = useState(false)
   const messagesEndRef = useRef(null)
 
-  const context = { poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances }
+  const context = { poids, repas, seances, composition, objectifs, pas, hydratation, budget, progression, tendances, macros }
 
   useEffect(() => {
     fetchOrGenerateSummary()

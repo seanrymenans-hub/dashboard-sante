@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { computeHealthEngine } from '../../lib/healthEngine'
 
-export default function NutritionSuggestions({ repas, objectifs, composition, poids }) {
+export default function NutritionSuggestions({ repas, objectifs, composition, poids, macros }) {
   const [suggestions, setSuggestions] = useState(null)
   const [loading, setLoading] = useState(false)
   const [preferences, setPreferences] = useState('')
@@ -29,9 +29,9 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
   const carbMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.glucides || 0), 0))
   const lipMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.lipides || 0), 0))
   const kcalObj = budget.budgetJour
-  const protObj = objectifs?.proteines_objectif || 150
-  const carbObj = objectifs?.glucides_objectif || 250
-  const lipObj = objectifs?.lipides_objectif || 67
+  const protObj = macros?.proteines || 166
+  const carbObj = macros?.glucides || 91
+  const lipObj = macros?.lipides || 38
   const kcalRestant = budget.kcalRestantes
 
   async function genererSuggestions() {
