@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
-export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour = 0, budget }: any) {
+export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour = 0, budget }) {
   const [nomAliment, setNomAliment] = useState('')
   const [typeRepas, setTypeRepas] = useState('dejeuner')
   const [preview, setPreview] = useState(null)
