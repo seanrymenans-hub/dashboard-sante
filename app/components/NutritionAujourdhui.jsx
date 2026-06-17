@@ -1,9 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { computeHealthEngine } from '../../lib/healthEngine'
 
-export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets }) {
+export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour }) {
   const [nomAliment, setNomAliment] = useState('')
   const [typeRepas, setTypeRepas] = useState('dejeuner')
   const [preview, setPreview] = useState(null)
@@ -18,11 +17,9 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
   const repasAujourdhui = repas.filter(r => r.date === selectedDate)
   const isToday = selectedDate === todayStr
 
-  const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
   const budgetHistorique = dailyBudgets?.find(b => b.date === selectedDate)
-  console.log('dailyBudgets:', dailyBudgets?.length, 'selectedDate:', selectedDate, 'budgetHistorique:', budgetHistorique)
   const kcalObj = isToday 
-    ? budget.budgetJour 
+    ? (budgetJour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
     : (budgetHistorique?.budget_jour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
   const protObj = objectifs?.proteines_objectif || 150
   const carbObj = objectifs?.glucides_objectif || 250
