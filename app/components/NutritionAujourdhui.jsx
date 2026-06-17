@@ -40,7 +40,7 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
   ]
   const typeMap = Object.fromEntries(types.map(t => [t.value, t]))
 
-  const macros = [
+  const macrosBars = [
     { label: 'Protéines', value: protMange, obj: protObj, bar: 'bg-blue-400', pill: 'bg-blue-50 text-blue-700', dot: 'bg-blue-400' },
     { label: 'Glucides', value: carbMange, obj: carbObj, bar: 'bg-amber-400', pill: 'bg-amber-50 text-amber-700', dot: 'bg-amber-400' },
     { label: 'Lipides', value: lipMange, obj: lipObj, bar: 'bg-green-400', pill: 'bg-green-50 text-green-700', dot: 'bg-green-400' },
@@ -186,7 +186,7 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
 
         {/* Barres macros */}
         <div className="flex flex-col gap-3">
-          {macros.map(m => {
+          {macrosBars.map(m => {
             const pct = Math.min(100, Math.round(m.value / m.obj * 100))
             const restant = Math.max(0, m.obj - m.value)
             return (
