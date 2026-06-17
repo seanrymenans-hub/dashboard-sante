@@ -210,6 +210,8 @@ export default function Home() {
             planSemaine={planSemaine}
             onPlanUpdate={setPlanSemaine}
             dailyBudgets={dailyBudgets}
+            budgetJour={budget.budgetJour}
+            budget={budget}
           />
         )}
 
