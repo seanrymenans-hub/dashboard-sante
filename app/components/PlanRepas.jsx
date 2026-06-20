@@ -13,7 +13,7 @@ function getLundiSemaine() {
   const now = new Date()
   const lundi = new Date(now)
   lundi.setDate(now.getDate() - ((now.getDay() + 6) % 7))
-  return lundi.toISOString().split('T')[0]
+  return `${lundi.getFullYear()}-${String(lundi.getMonth() + 1).padStart(2, '0')}-${String(lundi.getDate()).padStart(2, '0')}`
 }
 
 export default function PlanRepas({ objectifs, poids, composition, planCache, onPlanUpdate, macros }) {

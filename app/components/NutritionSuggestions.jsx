@@ -1,8 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { computeHealthEngine } from '../../lib/healthEngine'
 
-export default function NutritionSuggestions({ repas, objectifs, composition, poids, macros }) {
+export default function NutritionSuggestions({ repas, objectifs, composition, poids, macros, budget }) {
   const [suggestions, setSuggestions] = useState(null)
   const [loading, setLoading] = useState(false)
   const [preferences, setPreferences] = useState('')
@@ -20,7 +19,6 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
     setEditingPrefs(false)
   }
 
-  const { budget } = computeHealthEngine({ poids: [], repas, seances: [], composition: [], objectifs })
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const repasAujourdhui = repas.filter(r => r.date === today)

@@ -2,8 +2,7 @@
 import { useState } from 'react'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
-import { computeHealthEngine } from '../../lib/healthEngine'
-export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros }) {
+export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros, budget, tendances }) {
   const [synthese, setSynthese] = useState(null)
   const [loadingIA, setLoadingIA] = useState(false)
 
@@ -27,7 +26,6 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
     setLoadingIA(false)
   }
 
-  const { tendances, budget } = computeHealthEngine({ poids, repas, seances, composition, objectifs })
   const kcalObj = budget.budgetJour
 
   const last14 = [...new Set(

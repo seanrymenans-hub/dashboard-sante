@@ -1,13 +1,16 @@
 'use client'
 import { useMemo } from 'react'
 
-export default function Streak({ repas, objectifs, pas, seances }) {
-  const tmb = objectifs?.tmb || 1875
-  const tef = Math.round(tmb * 0.10)
-  const kcalPasMoy = pas?.slice(0, 7).reduce((s, p) => s + (p.calories_pas || 0), 0) / Math.max(1, Math.min(7, pas?.length || 1))
-  const kcalObj = Math.max(1200, tmb + tef + Math.round(kcalPasMoy) - (objectifs?.deficit_cible || 750))
-
+export default function Streak({ repas, objectifs, pas, seances, dailyBudgets, budget }) {
   const stats = useMemo(() => {
+    // Budget de référence pour chaque jour : on cherche le budget historique
+    // sauvegardé pour cette date, avec fallback sur le budget du jour courant
+    // si l'historique n'existe pas encore pour cette date (ex: avant migration).
+    function getBudgetDuJour(date) {
+      const entry = dailyBudgets?.find(b => b.date === date)
+      return entry?.budget_jour || budget?.budgetJour || 1800
+    }
+
     const parJour = {}
     repas.forEach(r => {
       if (!parJour[r.date]) parJour[r.date] = 0
@@ -15,14 +18,15 @@ export default function Streak({ repas, objectifs, pas, seances }) {
     })
 
     const jours = Object.keys(parJour).sort((a, b) => b.localeCompare(a))
-    
+
     let streak = 0
     let record = 0
     let tempStreak = 0
     let totalJoursReussis = 0
 
     for (let i = 0; i < jours.length; i++) {
-      const reussi = parJour[jours[i]] <= kcalObj && parJour[jours[i]] > 0
+      const kcalObjJour = getBudgetDuJour(jours[i])
+      const reussi = parJour[jours[i]] <= kcalObjJour && parJour[jours[i]] > 0
       if (reussi) {
         totalJoursReussis++
         tempStreak++
@@ -55,8 +59,7 @@ export default function Streak({ repas, objectifs, pas, seances }) {
     }).length || 0
 
     return { streak, record, totalJoursReussis, tauxReussite, totalJours: jours.length, streakActif, seancesSemaine }
-  console.log('pas dans streak:', pas?.length, joursAvecPas)
-  }, [repas, kcalObj, pas, seances, objectifs])
+  }, [repas, dailyBudgets, budget, pas, seances, objectifs])
 
   const badges = [
     { label: '1er jour', emoji: '🌱', seuil: 1, atteint: stats.record >= 1 },
@@ -106,7 +109,7 @@ export default function Streak({ repas, objectifs, pas, seances }) {
       </div>
 
       <div className="text-xs text-gray-400 p-3 bg-gray-50 rounded-lg">
-        Un jour est "réussi" quand tu respectes ton budget calorique dynamique (~{kcalObj} kcal en moyenne).
+        Un jour est "réussi" quand tu respectes ton budget calorique dynamique de ce jour-là.
         Tu as réussi <strong className="text-gray-600">{stats.totalJoursReussis} jours</strong> sur {stats.totalJours} jours trackés.
       </div>
     </div>

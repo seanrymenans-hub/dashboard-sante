@@ -35,6 +35,7 @@ export default function Home() {
   const [onglet, setOnglet] = useState('accueil')
   const [planSemaine, setPlanSemaine] = useState<any>(null)
   const [coachSummary, setCoachSummary] = useState<any>(null)
+  const [compositionAnalyse, setCompositionAnalyse] = useState<any>(null)
   const [showBudgetDetail, setShowBudgetDetail] = useState(false)
 
   const fetchData = useCallback(async () => {
@@ -67,27 +68,31 @@ export default function Home() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+    const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas, dailyBudgets })
+  const { budget, progression: prog, tendances, macros, today } = engine
+
+  // Sauvegarder le budget du jour dans Supabase — uniquement quand budget.budgetJour
+  // change réellement, pas à chaque re-render (changement d'onglet, popup, etc.)
+  useEffect(() => {
+    if (loading) return
+    supabase.from('daily_budget').upsert(
+      {
+        date: today,
+        budget_jour: budget.budgetJour,
+        tmb: budget.tmb,
+        kcal_pas: budget.kcalPas,
+        kcal_sport: budget.kcalSport,
+        tef: Math.round(budget.tmb * 0.1),
+        deficit_cible: budget.deficitCible,
+      },
+      { onConflict: 'date' }
+    )
+  }, [loading, today, budget.budgetJour, budget.tmb, budget.kcalPas, budget.kcalSport, budget.deficitCible])
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-gray-400">Chargement...</div>
     </div>
-  )
-
-  const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas })
-  const { budget, progression: prog, tendances, macros, today } = engine
-
-  // Sauvegarder le budget du jour dans Supabase
-  supabase.from('daily_budget').upsert(
-    {
-      date: today,
-      budget_jour: budget.budgetJour,
-      tmb: budget.tmb,
-      kcal_pas: budget.kcalPas,
-      kcal_sport: budget.kcalSport,
-      tef: Math.round(budget.tmb * 0.1),
-      deficit_cible: budget.deficitCible,
-    },
-    { onConflict: 'date' }
   )
 
   const pasAujourdhui = pas.find(p => p.date === today)
@@ -186,7 +191,7 @@ export default function Home() {
               </div>
             </div>
 
-            <Streak repas={repas} objectifs={objectifs} pas={pas} seances={seances} />
+            <Streak repas={repas} objectifs={objectifs} pas={pas} seances={seances} dailyBudgets={dailyBudgets} budget={budget} />
             <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
           </div>
         )}
@@ -194,7 +199,7 @@ export default function Home() {
         {onglet === 'corps' && (
           <div>
             <WithingsSync onRefresh={fetchData} syncPasOnly={false} />
-            <Composition composition={composition} onRefresh={fetchData} />
+            <Composition composition={composition} onRefresh={fetchData} analyseIA={compositionAnalyse} onAnalyseUpdate={setCompositionAnalyse} />
             <GraphiquePoids poids={poids} objectifs={objectifs} />
           </div>
         )}
@@ -213,6 +218,7 @@ export default function Home() {
             budgetJour={budget.budgetJour}
             budget={budget}
             macros={macros}
+            tendances={tendances}
           />
         )}
 

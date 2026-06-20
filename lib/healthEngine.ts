@@ -11,6 +11,7 @@ export interface HealthData {
   objectifs: any
   pas?: any[]
   hydratation?: any[]
+  dailyBudgets?: any[] // historique table daily_budget, pour comparer chaque jour à son propre budget
 }
 
 export interface DailyBudget {
@@ -83,7 +84,7 @@ export interface HealthEngineOutput {
 // ============================================
 
 export function computeHealthEngine(data: HealthData): HealthEngineOutput {
-  const { poids, repas, seances, composition, objectifs, pas = [], hydratation = [] } = data
+  const { poids, repas, seances, composition, objectifs, pas = [], hydratation = [], dailyBudgets = [] } = data
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
@@ -172,21 +173,29 @@ export function computeHealthEngine(data: HealthData): HealthEngineOutput {
     return Math.round(total / dates.length)
   }
 
-  function getJoursRespectés(dates: string[], kcalObj: number) {
+  // Compare chaque jour à SON propre budget historique, pas à un chiffre fixe
+  // ou au budget du jour courant. Fallback sur budgetJour uniquement si aucun
+  // budget historique n'existe pour cette date (ex: données antérieures à la migration).
+  function getBudgetDuJour(date: string): number {
+    const entry = dailyBudgets?.find(b => b.date === date)
+    return entry?.budget_jour || budgetJour
+  }
+
+  function getJoursRespectés(dates: string[]) {
     return dates.filter(date => {
       const kcal = repas.filter(r => r.date === date).reduce((s: number, r: any) => s + r.kcal, 0)
-      return kcal <= kcalObj && kcal > 0
+      const kcalObjJour = getBudgetDuJour(date)
+      return kcal <= kcalObjJour && kcal > 0
     }).length
   }
 
-  const kcalObj = objectifs?.kcal_journalier || budgetJour
   const dates7j = getJoursDansPlage(7)
   const dates14j = getJoursDansPlage(14)
   const dates30j = getJoursDansPlage(30)
 
-  const joursRespectés7j = getJoursRespectés(dates7j, kcalObj)
-  const joursRespectés14j = getJoursRespectés(dates14j, kcalObj)
-  const joursRespectés30j = getJoursRespectés(dates30j, kcalObj)
+  const joursRespectés7j = getJoursRespectés(dates7j)
+  const joursRespectés14j = getJoursRespectés(dates14j)
+  const joursRespectés30j = getJoursRespectés(dates30j)
 
   const tendances: TendancesData = {
     moyKcal7j: getMoyenne(dates7j, 'kcal'),

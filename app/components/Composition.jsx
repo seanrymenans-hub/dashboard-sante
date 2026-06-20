@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import GraphiqueComposition from './GraphiqueComposition'
 
-export default function Composition({ composition, onRefresh }) {
+export default function Composition({ composition, onRefresh, analyseIA, onAnalyseUpdate }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [masseGrasse, setMasseGrasse] = useState('')
   const [masseMusculaire, setMasseMusculaire] = useState('')
@@ -13,7 +13,6 @@ export default function Composition({ composition, onRefresh }) {
   const [masseOsseuse, setMasseOsseuse] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingIA, setLoadingIA] = useState(false)
-  const [analyseIA, setAnalyseIA] = useState(null)
   const [succes, setSucces] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [showGraphique, setShowGraphique] = useState(false)
@@ -55,7 +54,7 @@ export default function Composition({ composition, onRefresh }) {
         body: JSON.stringify({ composition: sorted.slice(0, 10) })
       })
       const data = await res.json()
-      if (data.analyse) setAnalyseIA(data)
+      if (data.analyse) onAnalyseUpdate?.(data)
     } catch(e) { console.error(e) }
     setLoadingIA(false)
   }
@@ -185,7 +184,7 @@ export default function Composition({ composition, onRefresh }) {
                 <span className="text-xs text-gray-600">{p.texte}</span>
               </div>
             ))}
-            <button onClick={() => setAnalyseIA(null)} className="text-xs text-gray-400 underline mt-2">
+            <button onClick={() => onAnalyseUpdate?.(null)} className="text-xs text-gray-400 underline mt-2">
               Fermer
             </button>
           </div>
