@@ -21,9 +21,14 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
   const kcalObj = isToday 
     ? (budgetJour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
     : (budgetHistorique?.budget_jour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
-  const protObj = macros?.proteines || 166
-  const carbObj = macros?.glucides || 91
-  const lipObj = macros?.lipides || 38
+  const poidsActuelPourMacros = objectifs?.poids_depart || 83
+  const protObjFixe = Math.round(poidsActuelPourMacros * 2)
+  const lipObjHistorique = budgetHistorique ? Math.round(budgetHistorique.budget_jour * 0.25 / 9) : 38
+  const glucObjHistorique = budgetHistorique ? Math.round((budgetHistorique.budget_jour - protObjFixe * 4 - lipObjHistorique * 9) / 4) : 91
+
+  const protObj = isToday ? (macros?.proteines || 166) : protObjFixe
+  const carbObj = isToday ? (macros?.glucides || 91) : Math.max(0, glucObjHistorique)
+  const lipObj = isToday ? (macros?.lipides || 38) : lipObjHistorique
 
   const kcalMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.kcal || 0), 0))
   const protMange = Math.round(repasAujourdhui.reduce((s, r) => s + (r.proteines || 0), 0))
