@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import RecalculerBudget from './RecalculerBudget'
 
 export default function Parametres({ onClose, onSave }) {
   const [poids, setPoidsObj] = useState(70)
@@ -120,6 +121,12 @@ export default function Parametres({ onClose, onSave }) {
                 <div className="text-xs text-gray-400 mt-1">du budget</div>
               </div>
             </div>
+          </div>
+
+          {/* Outil de maintenance — distinct visuellement des paramètres de profil */}
+          <div className="border-t border-gray-100 pt-4">
+            <div className="text-xs font-medium text-gray-500 mb-3">Maintenance</div>
+            <RecalculerBudget />
           </div>
         </div>
 

@@ -2,18 +2,16 @@
 import { useState } from 'react'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
+
 export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros, budget, tendances }) {
   const [synthese, setSynthese] = useState(null)
   const [loadingIA, setLoadingIA] = useState(false)
 
   async function genererSynthese() {
     setLoadingIA(true)
-
-    // Calculer le budget moyen sur 7 jours
     const budgetMoyen7j = Math.round(
       (budget.tmb + Math.round(budget.tmb * 0.1) - (objectifs?.deficit_cible || 750))
     )
-
     try {
       const res = await fetch('/api/analyse-nutrition', {
         method: 'POST',
@@ -28,61 +26,87 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
 
   const kcalObj = budget.budgetJour
 
-  const last14 = [...new Set(
-    repas.filter(r => (new Date().getTime() - new Date(r.date).getTime()) / (1000 * 60 * 60 * 24) <= 14).map(r => r.date)
-  )]
-
-  const jourRespectés14 = last14.filter(date => {
-    const kcal = repas.filter(r => r.date === date).reduce((s, r) => s + r.kcal, 0)
-    return kcal <= kcalObj && kcal > 0
-  }).length
-  const pct14 = last14.length > 0 ? Math.round(jourRespectés14 / last14.length * 100) : 0
-
   const pct7 = tendances.pctRespect7j
   const pct30 = tendances.pctRespect30j
   const moyKcal7 = tendances.moyKcal7j
   const moyProt7 = tendances.moyProt7j
 
-  const couleurPct = (pct) => pct >= 80 ? 'bg-green-400' : pct >= 50 ? 'bg-amber-400' : 'bg-red-400'
-  const couleurTexte = (pct) => pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
+  function getJourStr(offsetJours) {
+    const d = new Date()
+    d.setDate(d.getDate() - offsetJours)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
+  // Construit la série jour par jour (respecté/dépassé/pas de donnée) pour une fenêtre donnée
+  function serieRespect(nbJours) {
+    return Array.from({ length: nbJours }, (_, i) => {
+      const dateStr = getJourStr(nbJours - 1 - i)
+      const repasJour = repas.filter(r => r.date === dateStr)
+      const kcalJour = repasJour.reduce((s, r) => s + (r.kcal || 0), 0)
+      const aDesDonnees = repasJour.length > 0
+      return { dateStr, kcalJour, aDesDonnees, respecte: aDesDonnees && kcalJour <= kcalObj }
+    })
+  }
+
+  const serie14 = serieRespect(14)
+  const jourRespectés14 = serie14.filter(j => j.respecte).length
+  const pct14 = serie14.filter(j => j.aDesDonnees).length > 0
+    ? Math.round(jourRespectés14 / serie14.filter(j => j.aDesDonnees).length * 100)
+    : 0
+
+  const fenetres = [
+    { label: '7 derniers jours', pct: pct7, respectes: tendances.joursRespectés7j, total: 7 },
+    { label: '14 derniers jours', pct: pct14, respectes: jourRespectés14, total: serie14.filter(j => j.aDesDonnees).length },
+    { label: '30 derniers jours', pct: pct30, respectes: tendances.joursRespectés30j, total: 30 },
+  ]
+
+  const couleurPct = (pct) => pct >= 80 ? '#16c79a' : pct >= 50 ? '#EF9F27' : '#e2553f'
+  const couleurPctBg = (pct) => pct >= 80 ? '#d4f5ec' : pct >= 50 ? '#faeeda' : '#ffe4dc'
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Respect des objectifs */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <div className="font-medium mb-4">Respect des objectifs</div>
+    <div className="flex flex-col gap-[22px]">
 
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {[
-            { label: '7 derniers jours', pct: pct7, jours: `${tendances.joursRespectés7j}/${tendances.pctRespect7j > 0 ? Math.round(tendances.joursRespectés7j / tendances.pctRespect7j * 100) : 0}` },
-            { label: '14 derniers jours', pct: pct14, jours: `${jourRespectés14}/${last14.length}` },
-            { label: '30 derniers jours', pct: pct30, jours: `${tendances.joursRespectés30j}/${tendances.pctRespect30j > 0 ? Math.round(tendances.joursRespectés30j / tendances.pctRespect30j * 100) : 0}` },
-          ].map(item => (
-            <div key={item.label} className="bg-gray-50 rounded-xl p-4">
-              <div className="text-xs text-gray-400 mb-2">{item.label}</div>
-              <div className={`text-2xl font-bold mb-2 ${couleurTexte(item.pct)}`}>{item.pct}%</div>
-              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
-                <div
-                  className={`h-full rounded-full transition-all ${couleurPct(item.pct)}`}
-                  style={{ width: `${item.pct}%` }}
-                />
+      {/* Respect des objectifs — anneaux simples */}
+      <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+        <div className="text-[18px] font-extrabold text-[#2a1a12] mb-1">Respect des objectifs</div>
+        <div className="text-[13px] text-[#8a807a] mb-6">Pourcentage de jours où tu es resté sous ton budget calorique</div>
+
+        <div className="grid grid-cols-3 gap-4">
+          {fenetres.map(f => (
+            <div key={f.label} className="flex flex-col items-center rounded-2xl py-6 px-3" style={{ background: couleurPctBg(f.pct) }}>
+              <div className="relative w-[104px] h-[104px]">
+                <svg width="104" height="104" viewBox="0 0 104 104">
+                  <circle cx="52" cy="52" r="44" fill="none" stroke="white" strokeWidth="11" />
+                  <circle cx="52" cy="52" r="44" fill="none"
+                    stroke={couleurPct(f.pct)}
+                    strokeWidth="11" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 44}`}
+                    strokeDashoffset={`${2 * Math.PI * 44 * (1 - f.pct / 100)}`}
+                    transform="rotate(-90 52 52)"
+                    style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-extrabold" style={{ color: couleurPct(f.pct) }}>{f.pct}%</span>
+                </div>
               </div>
-              <div className="text-xs text-gray-400">{item.jours} jours respectés</div>
+              <span className="text-[13px] font-bold text-[#2a1a12] mt-3 text-center">{f.label}</span>
+              <span className="text-xs text-[#8a807a] mt-0.5">{f.respectes}/{f.total} jours</span>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mt-5">
           {[
             { label: 'Moy. calories / jour (7j)', value: moyKcal7, unit: 'kcal', obj: kcalObj },
             { label: 'Moy. protéines / jour (7j)', value: moyProt7, unit: 'g', obj: macros?.proteines || 166 },
           ].map(item => (
-            <div key={item.label} className="bg-gray-50 rounded-xl p-4">
-              <div className="text-xs text-gray-400 mb-2">{item.label}</div>
-              <div className="text-2xl font-bold text-gray-800">
-                {item.value} <span className="text-sm font-normal text-gray-400">{item.unit}</span>
+            <div key={item.label} className="bg-[#f9f6f3] rounded-2xl p-4">
+              <div className="text-xs text-[#8a807a] font-medium mb-2">{item.label}</div>
+              <div className="text-2xl font-extrabold text-[#2a1a12]">
+                {item.value} <span className="text-sm font-medium text-[#b0a8a2]">{item.unit}</span>
               </div>
-              <div className="text-xs text-gray-400 mt-1">Objectif : {item.obj} {item.unit}</div>
+              <div className="text-xs text-[#b0a8a2] mt-1">Objectif : {item.obj} {item.unit}</div>
             </div>
           ))}
         </div>
@@ -93,21 +117,21 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
       <GraphiqueMacros repas={repas} objectifs={objectifs} />
 
       {/* Synthèse IA */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
+      <div className="rounded-[26px] bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white overflow-hidden">
+        <div className="flex items-center gap-2.5 px-7 py-5">
+          <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff6b4a] to-[#ff9248] flex items-center justify-center text-[13px] flex-none">✦</span>
           <div>
-            <div className="font-medium">Synthèse IA</div>
-            <div className="text-xs text-gray-400 mt-1">Analyse personnalisée de tes habitudes nutritionnelles</div>
+            <div className="text-[15px] font-extrabold">Synthèse IA</div>
+            <div className="text-xs opacity-70 mt-0.5">Analyse personnalisée de tes habitudes nutritionnelles</div>
           </div>
-          <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">IA</span>
         </div>
-        <div className="px-6 py-4">
+        <div className="px-7 pb-7">
           {!synthese && (
             <div className="text-center py-4">
               <button
                 onClick={genererSynthese}
                 disabled={loadingIA}
-                className="bg-black text-white rounded-lg px-6 py-2 text-sm disabled:opacity-40"
+                className="border-none bg-white/[0.12] hover:bg-white/20 text-white font-bold text-[13px] px-6 py-2.5 rounded-xl transition-all disabled:opacity-40"
               >
                 {loadingIA ? 'Analyse en cours...' : 'Générer ma synthèse ✨'}
               </button>
@@ -115,32 +139,32 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
           )}
           {synthese && (
             <div>
-              <div className="bg-gray-50 rounded-xl p-4 mb-3">
-                <div className="text-sm text-gray-700 leading-relaxed">{synthese.bilan}</div>
+              <div className="bg-white/[0.08] rounded-2xl p-4 mb-3">
+                <div className="text-sm leading-relaxed font-medium">{synthese.bilan}</div>
               </div>
               {synthese.positifs?.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-xs font-medium text-green-600 mb-2">✓ Ce qui va bien</div>
+                  <div className="text-xs font-bold opacity-80 mb-2 tracking-wide">CE QUI VA BIEN</div>
                   {synthese.positifs.map((p, i) => (
                     <div key={i} className="flex items-start gap-2 mb-1">
-                      <span className="text-green-500 text-sm">✓</span>
-                      <span className="text-sm text-gray-600">{p}</span>
+                      <span className="text-[#7be8b5] text-sm">✓</span>
+                      <span className="text-sm opacity-90">{p}</span>
                     </div>
                   ))}
                 </div>
               )}
               {synthese.conseils?.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-purple-600 mb-2">💡 Conseils</div>
+                  <div className="text-xs font-bold opacity-80 mb-2 tracking-wide">CONSEILS</div>
                   {synthese.conseils.map((c, i) => (
-                    <div key={i} className="border border-gray-100 rounded-xl p-3 mb-2">
-                      <div className="text-sm font-medium text-gray-800 mb-1">{c.titre}</div>
-                      <div className="text-xs text-gray-500">{c.detail}</div>
+                    <div key={i} className="bg-white/[0.08] rounded-xl p-3 mb-2">
+                      <div className="text-sm font-bold mb-1">{c.titre}</div>
+                      <div className="text-xs opacity-80">{c.detail}</div>
                     </div>
                   ))}
                 </div>
               )}
-              <button onClick={() => setSynthese(null)} className="text-xs text-gray-400 underline mt-2">
+              <button onClick={() => setSynthese(null)} className="text-xs opacity-70 underline mt-3">
                 Regénérer
               </button>
             </div>

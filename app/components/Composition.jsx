@@ -59,171 +59,217 @@ export default function Composition({ composition, onRefresh, analyseIA, onAnaly
     setLoadingIA(false)
   }
 
-  const metrics = [
+  function diffEt(val, prev) {
+    if (!val || !prev) return null
+    return parseFloat((parseFloat(val) - parseFloat(prev)).toFixed(1))
+  }
+
+  // Texte narratif pour les 2 métriques clés (gras/muscle) — explique le sens de l'évolution
+  // Priorité au delta sur 7j (plus fiable, moins de bruit de mesure jour-à-jour),
+  // fallback sur le delta "vs hier" seulement si la mesure 7j n'est pas encore disponible.
+  function texteNarratif(diffHier, diff7j, positifSiDiminue) {
+    const diff = diff7j !== null ? diff7j : diffHier
+    const periode = diff7j !== null ? 'sur 7j' : 'vs hier'
+    if (diff === null) return null
+    if (diff === 0) return { texte: `Stable ${periode}`, positif: null, hausse: false }
+    const estPositif = positifSiDiminue ? diff < 0 : diff > 0
+    const signe = diff > 0 ? '+' : ''
+    return {
+      texte: `${signe}${diff} kg ${periode} · ${estPositif ? 'en bonne voie, continue' : 'à surveiller'}`,
+      positif: estPositif,
+      hausse: diff > 0
+    }
+  }
+
+  const metriquesCles = [
     {
       label: 'Masse grasse', val: derniere?.masse_grasse, pct: derniere?.masse_grasse_pct,
-      prev: avant?.masse_grasse, prev7j: mesure7j?.masse_grasse,
-      color: '#EF9F27', positifSiDiminue: true
+      positifSiDiminue: true
     },
     {
       label: 'Masse musculaire', val: derniere?.masse_musculaire, pct: derniere?.masse_musculaire_pct,
-      prev: avant?.masse_musculaire, prev7j: mesure7j?.masse_musculaire,
-      color: '#1D9E75', positifSiDiminue: false
-    },
-    {
-      label: 'Masse hydrique', val: derniere?.masse_hydrique, pct: derniere?.masse_hydrique_pct,
-      prev: avant?.masse_hydrique, prev7j: mesure7j?.masse_hydrique,
-      color: '#378ADD', positifSiDiminue: false
-    },
-    {
-      label: 'Masse maigre', val: derniere?.masse_maigre,
-      prev: avant?.masse_maigre, prev7j: mesure7j?.masse_maigre,
-      color: '#534AB7', positifSiDiminue: false
-    },
-    {
-      label: 'Masse osseuse', val: derniere?.masse_osseuse,
-      prev: avant?.masse_osseuse, prev7j: mesure7j?.masse_osseuse,
-      color: '#888780', positifSiDiminue: false
+      positifSiDiminue: false
     },
   ]
 
-  function getIndicateur(diff, positifSiDiminue) {
-    if (!diff || diff === 0) return null
-    const estPositif = positifSiDiminue ? diff < 0 : diff > 0
-    return estPositif ? '↑ positif' : '↓ attention'
-  }
+  const metriquesSecondaires = [
+    {
+      label: 'Masse hydrique', val: derniere?.masse_hydrique, pct: derniere?.masse_hydrique_pct,
+      prev: avant?.masse_hydrique, color: '#378ADD'
+    },
+    {
+      label: 'Masse maigre', val: derniere?.masse_maigre,
+      prev: avant?.masse_maigre, color: '#7c5cff'
+    },
+    {
+      label: 'Masse osseuse', val: derniere?.masse_osseuse,
+      prev: avant?.masse_osseuse, color: '#8a807a'
+    },
+  ]
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-medium">Composition corporelle</div>
-          <div className="text-xs text-gray-400">
-            {derniere ? `Dernière mesure : ${new Date(derniere.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : 'Aucune mesure encore'}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowGraphique(!showGraphique)} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-            {showGraphique ? 'Masquer' : '📈 Évolution'}
-          </button>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className={`text-sm px-4 py-1.5 rounded-lg border transition-all ${succes ? 'bg-green-500 text-white border-green-500' : 'border-gray-200'}`}
-          >
-            {succes ? '✓ Ajouté !' : showForm ? 'Annuler' : '+ Mesure'}
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-[22px] mb-[22px]">
 
-      {/* Métriques */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {metrics.map(m => {
-          const diffHier = m.val && m.prev ? parseFloat((parseFloat(m.val) - parseFloat(m.prev)).toFixed(1)) : null
-          const diff7j = m.val && m.prev7j ? parseFloat((parseFloat(m.val) - parseFloat(m.prev7j)).toFixed(1)) : null
-          const indicateur = getIndicateur(diffHier, m.positifSiDiminue)
+      {/* Bloc héros — gras/muscle + secondaires alignées en hauteur */}
+      <div className="grid grid-cols-[1.4fr_1fr] gap-[22px] items-stretch">
 
-          return (
-            <div key={m.label} className="bg-gray-50 rounded-xl p-3">
-              <div className="text-xs text-gray-400 mb-1">{m.label}</div>
-              <div className="text-lg font-medium" style={{ color: m.val ? m.color : '#ccc' }}>
-                {m.val ? `${m.val} kg` : '—'}
+        <div className="rounded-[26px] bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] p-[28px_30px] text-white shadow-[0_20px_40px_-18px_rgba(255,107,74,0.5)] flex flex-col justify-center">
+          {metriquesCles.map((m, i) => {
+            const diffHier = diffEt(m.val, sorted[1]?.[m.label === 'Masse grasse' ? 'masse_grasse' : 'masse_musculaire'])
+            const diff7j = diffEt(m.val, mesure7j?.[m.label === 'Masse grasse' ? 'masse_grasse' : 'masse_musculaire'])
+            const narratif = texteNarratif(diffHier, diff7j, m.positifSiDiminue)
+            return (
+              <div key={m.label}>
+                {i > 0 && <div className="h-px bg-white/25 my-5" />}
+                <div className="text-[13px] font-bold opacity-90 tracking-wide uppercase">{m.label}</div>
+                <div className="flex items-baseline gap-2.5 mt-2.5">
+                  <span className={i === 0 ? 'text-[40px] font-extrabold leading-none' : 'text-[32px] font-extrabold leading-none'}>
+                    {m.val || '—'}
+                  </span>
+                  <span className="text-base opacity-85">{m.val ? `kg${m.pct ? ` · ${m.pct}%` : ''}` : ''}</span>
+                </div>
+                {narratif && (
+                  <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-xl px-3.5 py-2 mt-3.5 text-sm font-bold">
+                    <span>{narratif.positif === null ? '•' : narratif.hausse ? '↑' : '↓'}</span>
+                    <span>{narratif.texte}</span>
+                  </div>
+                )}
               </div>
-              {m.pct && <div className="text-xs text-gray-400 mt-0.5">{m.pct}%</div>}
+            )
+          })}
+        </div>
 
-              {/* Évolution hier */}
-              {diffHier !== null && (
-                <div className={`text-xs mt-1 ${
-                  (m.positifSiDiminue && diffHier < 0) || (!m.positifSiDiminue && diffHier > 0)
-                    ? 'text-green-600' : diffHier === 0 ? 'text-gray-400' : 'text-red-500'
-                }`}>
-                  {diffHier > 0 ? '+' : ''}{diffHier} kg vs hier
+        <div className="flex flex-col gap-3.5">
+          {metriquesSecondaires.map(m => {
+            const diff = diffEt(m.val, m.prev)
+            return (
+              <div key={m.label} className="flex-1 bg-white rounded-[18px] p-[18px] shadow-[0_8px_18px_-14px_rgba(0,0,0,0.18)] flex flex-col justify-center">
+                <div className="text-xs font-bold tracking-wide" style={{ color: m.color }}>{m.label.toUpperCase()}</div>
+                <div className="flex items-baseline justify-between mt-2">
+                  <div className="text-xl font-extrabold text-[#2a1a12]">
+                    {m.val ? `${m.val} kg` : '—'} {m.pct && <span className="text-xs font-medium text-[#b0a8a2]">{m.pct}%</span>}
+                  </div>
+                  {diff !== null && (
+                    <div className={`text-xs font-bold ${diff === 0 ? 'text-[#8a807a]' : diff < 0 ? 'text-[#13a884]' : 'text-[#d97706]'}`}>
+                      {diff === 0 ? 'stable' : `${diff > 0 ? '+' : ''}${diff} kg`}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* Évolution 7j */}
-              {diff7j !== null && (
-                <div className={`text-xs mt-0.5 ${
-                  (m.positifSiDiminue && diff7j < 0) || (!m.positifSiDiminue && diff7j > 0)
-                    ? 'text-green-600' : diff7j === 0 ? 'text-gray-400' : 'text-red-500'
-                }`}>
-                  {diff7j > 0 ? '+' : ''}{diff7j} kg sur 7j
-                </div>
-              )}
-
-              {/* Indicateur */}
-              {indicateur && (
-                <div className={`text-xs mt-1 font-medium ${indicateur.includes('positif') ? 'text-green-600' : 'text-amber-500'}`}>
-                  {indicateur}
-                </div>
-              )}
-            </div>
-          )
-        })}
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Analyse IA */}
-      <div className="border-t border-gray-50 pt-4 mb-4">
+      {/* Analyse IA — carte avec contexte + action */}
+      <div className="rounded-[26px] bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] p-[24px_28px] text-white">
         {!analyseIA && (
-          <button
-            onClick={analyserComposition}
-            disabled={loadingIA || !derniere}
-            className="w-full border border-purple-200 bg-purple-50 text-purple-700 rounded-xl py-2 text-sm hover:bg-purple-100 transition-all disabled:opacity-40"
-          >
-            {loadingIA ? 'Analyse en cours...' : '🧠 Analyser ma composition IA'}
-          </button>
+          <div className="flex items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff6b4a] to-[#ff9248] flex items-center justify-center text-[13px] flex-none">✦</span>
+                <span className="text-[13px] font-extrabold tracking-wide">ANALYSE IA</span>
+              </div>
+              <p className="m-0 text-sm leading-relaxed opacity-90">
+                Ton coach peut croiser ces 5 mesures avec ton historique pour te dire si ta perte de gras est sur la bonne trajectoire.
+              </p>
+            </div>
+            <button
+              onClick={analyserComposition}
+              disabled={loadingIA || !derniere}
+              className="flex-none border-none bg-white/[0.12] hover:bg-white/20 text-white font-bold text-[13px] px-5 py-3 rounded-2xl transition-all disabled:opacity-40"
+            >
+              {loadingIA ? 'Analyse en cours...' : 'Analyser ✨'}
+            </button>
+          </div>
         )}
         {analyseIA && (
-          <div className="bg-purple-50 rounded-xl p-4">
-            <div className="text-xs font-medium text-purple-700 mb-2">🧠 Analyse IA</div>
-            <div className="text-sm text-gray-700 leading-relaxed mb-2">{analyseIA.analyse}</div>
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff6b4a] to-[#ff9248] flex items-center justify-center text-[13px] flex-none">✦</span>
+              <span className="text-[13px] font-extrabold tracking-wide">ANALYSE IA</span>
+            </div>
+            <div className="text-sm leading-relaxed mb-3 font-medium">{analyseIA.analyse}</div>
             {analyseIA.points?.map((p, i) => (
               <div key={i} className="flex items-start gap-2 mb-1">
-                <span className={`text-xs mt-0.5 ${p.positif ? 'text-green-600' : 'text-amber-600'}`}>
+                <span className={`text-xs mt-0.5 ${p.positif ? 'text-[#7be8b5]' : 'text-[#ffc78a]'}`}>
                   {p.positif ? '✓' : '→'}
                 </span>
-                <span className="text-xs text-gray-600">{p.texte}</span>
+                <span className="text-xs opacity-90">{p.texte}</span>
               </div>
             ))}
-            <button onClick={() => onAnalyseUpdate?.(null)} className="text-xs text-gray-400 underline mt-2">
+            <button onClick={() => onAnalyseUpdate?.(null)} className="text-xs opacity-70 underline mt-3">
               Fermer
             </button>
           </div>
         )}
       </div>
 
-      {/* Graphique */}
-      {showGraphique && (
-        <div className="border-t border-gray-50 pt-4">
-          <GraphiqueComposition composition={composition} />
+      {/* Header actions + formulaire + graphique */}
+      <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <div className="text-[18px] font-extrabold text-[#2a1a12]">Historique des mesures</div>
+            <div className="text-[13px] text-[#8a807a] mt-0.5">
+              {derniere ? `Dernière mesure : ${new Date(derniere.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : 'Aucune mesure encore'}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowGraphique(!showGraphique)} className="text-[13px] font-semibold border border-[#f3eee9] rounded-xl px-4 py-2 text-[#2a1a12] hover:bg-[#fff3ea] transition-all">
+              {showGraphique ? 'Masquer' : '📈 Évolution'}
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={`text-[13px] font-semibold px-4 py-2 rounded-xl transition-all ${
+                succes
+                  ? 'bg-[#16c79a] text-white'
+                  : showForm
+                    ? 'border border-[#f3eee9] text-[#2a1a12] hover:bg-[#fff3ea]'
+                    : 'bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)]'
+              }`}
+            >
+              {succes ? '✓ Ajouté !' : showForm ? 'Annuler' : '+ Mesure'}
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Formulaire */}
-      {showForm && (
-        <div className="border-t border-gray-50 pt-4">
-          <div className="flex justify-end mb-3">
-            <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={e => setDate(e.target.value)} />
+        {showGraphique && (
+          <div className="mt-5 pt-5 border-t border-[#f3eee9]">
+            <GraphiqueComposition composition={composition} />
           </div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {[
-              ['Masse grasse (kg)', masseGrasse, setMasseGrasse],
-              ['Masse musculaire (kg)', masseMusculaire, setMasseMusculaire],
-              ['Masse hydrique (kg)', masseHydrique, setMasseHydrique],
-              ['Graisse viscérale', graisseViscerale, setGraisseViscerale],
-              ['Masse maigre (kg)', masseMaigre, setMasseMaigre],
-              ['Masse osseuse (kg)', masseOsseuse, setMasseOsseuse],
-            ].map(([label, val, setter]) => (
-              <div key={label}>
-                <label className="text-xs text-gray-400 block mb-1">{label}</label>
-                <input type="number" step="0.1" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="0.0" value={val} onChange={e => setter(e.target.value)} />
-              </div>
-            ))}
+        )}
+
+        {showForm && (
+          <div className="mt-5 pt-5 border-t border-[#f3eee9]">
+            <div className="flex justify-end mb-3">
+              <input type="date" className="border border-[#f3eee9] rounded-xl px-3 py-2 text-sm" value={date} onChange={e => setDate(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[
+                ['Masse grasse (kg)', masseGrasse, setMasseGrasse],
+                ['Masse musculaire (kg)', masseMusculaire, setMasseMusculaire],
+                ['Masse hydrique (kg)', masseHydrique, setMasseHydrique],
+                ['Graisse viscérale', graisseViscerale, setGraisseViscerale],
+                ['Masse maigre (kg)', masseMaigre, setMasseMaigre],
+                ['Masse osseuse (kg)', masseOsseuse, setMasseOsseuse],
+              ].map(([label, val, setter]) => (
+                <div key={label}>
+                  <label className="text-xs text-[#8a807a] block mb-1">{label}</label>
+                  <input type="number" step="0.1" className="w-full border border-[#f3eee9] rounded-xl px-3 py-2 text-sm" placeholder="0.0" value={val} onChange={e => setter(e.target.value)} />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={ajouter}
+              disabled={loading}
+              className="w-full rounded-xl py-2.5 text-sm font-bold bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)] transition-all disabled:opacity-40"
+            >
+              {loading ? 'Enregistrement...' : 'Enregistrer la mesure'}
+            </button>
           </div>
-          <button onClick={ajouter} disabled={loading} className="w-full bg-black text-white rounded-lg py-2 text-sm">
-            {loading ? 'Enregistrement...' : 'Enregistrer la mesure'}
-          </button>
-        </div>
-      )}
+        )}
+      </div>
+
     </div>
   )
 }

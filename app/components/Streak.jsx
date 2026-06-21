@@ -61,57 +61,61 @@ export default function Streak({ repas, objectifs, pas, seances, dailyBudgets, b
     return { streak, record, totalJoursReussis, tauxReussite, totalJours: jours.length, streakActif, seancesSemaine }
   }, [repas, dailyBudgets, budget, pas, seances, objectifs])
 
-  const badges = [
-    { label: '1er jour', emoji: '🌱', seuil: 1, atteint: stats.record >= 1 },
-    { label: '3 jours', emoji: '🔥', seuil: 3, atteint: stats.record >= 3 },
-    { label: '7 jours', emoji: '⚡', seuil: 7, atteint: stats.record >= 7 },
-    { label: '14 jours', emoji: '💪', seuil: 14, atteint: stats.record >= 14 },
-    { label: '30 jours', emoji: '🏆', seuil: 30, atteint: stats.record >= 30 },
-    { label: '60 jours', emoji: '👑', seuil: 60, atteint: stats.record >= 60 },
-  ]
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const pasAujourdhui = pas?.find(p => p.date === today)
+  const nbPas = pasAujourdhui?.nb_pas || 0
+  const objectifPas = objectifs?.objectif_pas || 10000
+  const objectifSeances = objectifs?.objectif_seances_semaine || 4
+
+  // Barre de progression — 7 segments représentant les 7 derniers jours,
+  // pleins si le streak couvre ce jour, vides sinon (proche du mockup)
+  const segments = Array.from({ length: 7 }, (_, i) => i < stats.streak)
+  const joursPourBattreRecord = Math.max(0, stats.record - stats.streak + 1)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-      <div className="font-medium mb-4">Streak & motivation</div>
-
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-orange-50 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-orange-500">{stats.streak}</div>
-          <div className="text-xs text-orange-400 mt-1">jours nutrition 🔥</div>
+    <section className="rounded-[26px] bg-gradient-to-br from-[#16c79a] to-[#13a884] p-[26px_28px] text-white shadow-[0_16px_30px_-16px_rgba(22,199,154,0.6)]">
+      <div className="flex justify-between items-start">
+        <div>
+          <div className="text-[13px] font-bold opacity-90 tracking-wide">SÉRIE EN COURS</div>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-[48px] font-extrabold leading-none">{stats.streak}</span>
+            <span className="text-[15px] opacity-90">jours réussis</span>
+          </div>
         </div>
-        <div className="bg-purple-50 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-purple-500">{stats.record}</div>
-          <div className="text-xs text-purple-400 mt-1">record personnel 🏆</div>
-        </div>
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-green-500">{stats.streakActif}</div>
-          <div className="text-xs text-green-400 mt-1">jours actifs 👟</div>
-        </div>
-        <div className="bg-blue-50 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-blue-500">{stats.seancesSemaine}</div>
-          <div className="text-xs text-blue-400 mt-1">séances cette semaine 🏋️</div>
-        </div>
+        <div className="text-4xl">🔥</div>
       </div>
 
-      <div className="mb-4">
-        <div className="text-xs text-gray-400 mb-3">Badges débloqués</div>
-        <div className="flex gap-3 flex-wrap">
-          {badges.map(b => (
-            <div
-              key={b.label}
-              className={`flex flex-col items-center p-3 rounded-xl border transition-all ${b.atteint ? 'border-amber-200 bg-amber-50' : 'border-gray-100 bg-gray-50 opacity-40'}`}
-            >
-              <div className="text-2xl mb-1">{b.emoji}</div>
-              <div className="text-xs font-medium text-gray-600">{b.label}</div>
-            </div>
-          ))}
-        </div>
+      <div className="flex gap-1.5 mt-7">
+        {segments.map((plein, i) => (
+          <div
+            key={i}
+            className={`flex-1 h-1.5 rounded-full ${plein ? 'bg-white/90' : 'bg-white/30'}`}
+          />
+        ))}
       </div>
 
-      <div className="text-xs text-gray-400 p-3 bg-gray-50 rounded-lg">
-        Un jour est "réussi" quand tu respectes ton budget calorique dynamique de ce jour-là.
-        Tu as réussi <strong className="text-gray-600">{stats.totalJoursReussis} jours</strong> sur {stats.totalJours} jours trackés.
+      {stats.streak >= stats.record && stats.record > 0 ? (
+        <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 mt-3 text-[13px] font-bold">
+          <span>🎉</span>
+          <span>Nouveau record personnel !</span>
+        </div>
+      ) : (
+        <div className="text-[13px] opacity-90 mt-3">
+          Plus que {joursPourBattreRecord} jour{joursPourBattreRecord > 1 ? 's' : ''} pour battre ton record ({stats.record})
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2.5 mt-5 pt-5 border-t border-white/20">
+        <div>
+          <div className="text-lg font-extrabold">{stats.record}</div>
+          <div className="text-[11px] opacity-80 mt-0.5">record personnel</div>
+        </div>
+        <div>
+          <div className="text-lg font-extrabold">{stats.tauxReussite}%</div>
+          <div className="text-[11px] opacity-80 mt-0.5">taux de réussite</div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

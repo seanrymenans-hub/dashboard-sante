@@ -9,10 +9,9 @@ export default function WithingsSync({ onRefresh, syncPasOnly = false }) {
 
   useEffect(() => {
     async function check() {
-  const { data, error } = await supabase.from('withings_tokens').select('id').limit(1)
-  console.log('Withings check:', data, error)
-  setConnecte(data && data.length > 0)
-}
+      const { data } = await supabase.from('withings_tokens').select('id').limit(1)
+      setConnecte(data && data.length > 0)
+    }
     check()
     if (window.location.search.includes('withings=connected')) {
       setConnecte(true)
@@ -57,35 +56,45 @@ export default function WithingsSync({ onRefresh, syncPasOnly = false }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className={`w-2 h-2 rounded-full ${connecte ? 'bg-green-500' : 'bg-gray-300'}`} />
-        <div>
-          <div className="text-sm font-medium">Withings</div>
-          <div className="text-xs text-gray-400">{connecte ? (syncPasOnly ? 'Connecté · pas et activité' : 'Connecté · poids et composition auto') : 'Non connecté'}</div>
+    <div className="flex items-center gap-3">
+      {succes && <span className="text-xs text-[#8a807a]">{succes}</span>}
+
+      <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2.5 shadow-[0_4px_12px_-8px_rgba(0,0,0,0.15)]">
+        <div className={`w-2 h-2 rounded-full ${connecte ? 'bg-[#16c79a]' : 'bg-[#d8cfc8]'}`} />
+        <span className="text-[13px] font-semibold text-[#2a1a12]">
+          {connecte ? 'Withings connecté' : 'Withings non connecté'}
+        </span>
+      </div>
+
+      {connecte ? (
+        <div className="flex gap-2">
+          {!syncPasOnly && (
+            <button
+              onClick={synchroniser}
+              disabled={!!loading}
+              className="flex items-center gap-2 text-[13px] font-bold bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white rounded-full px-5 py-2.5 transition-all disabled:opacity-50"
+            >
+              <span>↻</span>{loading === 'all' ? 'Sync...' : 'Synchroniser'}
+            </button>
+          )}
+          {syncPasOnly && (
+            <button
+              onClick={synchroniserPas}
+              disabled={!!loading}
+              className="flex items-center gap-2 text-[13px] font-bold bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white rounded-full px-5 py-2.5 transition-all disabled:opacity-50"
+            >
+              <span>👟</span>{loading === 'pas' ? 'Sync...' : 'Sync pas'}
+            </button>
+          )}
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {succes && <span className="text-xs text-gray-400">{succes}</span>}
-        {connecte ? (
-          <div className="flex gap-2">
-            {!syncPasOnly && (
-              <button onClick={synchroniser} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-                {loading === 'all' ? 'Sync...' : '↻ Synchroniser'}
-              </button>
-            )}
-            {syncPasOnly && (
-              <button onClick={synchroniserPas} disabled={!!loading} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5">
-                {loading === 'pas' ? 'Sync...' : '👟 Sync pas'}
-              </button>
-            )}
-          </div>
-        ) : (
-          <a href="/api/withings/auth" className="text-sm bg-black text-white rounded-lg px-4 py-1.5">
-            Connecter Withings
-          </a>
-        )}
-      </div>
+      ) : (
+        <a
+          href="/api/withings/auth"
+          className="text-[13px] font-bold bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white rounded-full px-5 py-2.5 shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)]"
+        >
+          Connecter Withings
+        </a>
+      )}
     </div>
   )
 }

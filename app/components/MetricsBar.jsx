@@ -4,60 +4,76 @@ import { useState } from 'react'
 
 export default function MetricsBar({ poids, repas, seances, objectifs, pas }) {
   const [showDetail, setShowDetail] = useState(false)
-  const { budget, progression: prog, today } = computeHealthEngine({ poids, repas, seances, composition: [], objectifs, pas })
+  const { budget, today } = computeHealthEngine({ poids, repas, seances, composition: [], objectifs, pas })
   const pasAujourdhui = pas?.find(p => p.date === today)
+  const nbPas = pasAujourdhui?.nb_pas || 0
 
-  const seancesSemaine = seances?.filter(s => {
-    const diff = (new Date().getTime() - new Date(s.date).getTime()) / (1000 * 60 * 60 * 24)
-    return diff <= 7
-  }).length || 0
+  // % consommé pour l'anneau conique (kcal consommées / budget du jour)
+  const pctConsomme = budget.budgetJour > 0
+    ? Math.min(100, Math.round((budget.kcalConsommees / budget.budgetJour) * 100))
+    : 0
 
   return (
-    <div className="grid grid-cols-5 gap-4 mb-8">
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <div className="text-xs text-gray-400 mb-1">Poids actuel</div>
-        <div className="text-2xl font-medium">{prog.poidsActuel} kg</div>
-        <div className="text-xs text-green-600 mt-1">objectif {prog.poidsObjectif} kg</div>
-      </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <div className="text-xs text-gray-400 mb-1">Progression</div>
-        <div className="text-2xl font-medium">{prog.progressionPct}%</div>
-        <div className="text-xs text-gray-400 mt-1">{prog.kgPerdus.toFixed(1)} kg perdus</div>
-      </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-4 relative cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
-        <div className="flex justify-between items-start">
-          <div className="text-xs text-gray-400 mb-1">Budget calorique</div>
-          <span className="w-4 h-4 rounded-full bg-gray-100 text-gray-400 text-xs flex items-center justify-center">?</span>
+    <section
+      className="relative rounded-[26px] bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] p-[30px_32px] text-white shadow-[0_20px_40px_-18px_rgba(255,107,74,0.65)] flex gap-8 items-center cursor-pointer"
+      onClick={() => setShowDetail(!showDetail)}
+    >
+  
+      <div className="relative w-40 h-40 flex-none flex items-center justify-center">
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: `conic-gradient(rgba(255,255,255,0.95) 0% ${pctConsomme}%, rgba(255,255,255,0.18) ${pctConsomme}% 100%)`,
+            mask: 'radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px))',
+            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px))'
+          }}
+        />
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-4xl font-extrabold leading-none">{budget.kcalRestantes}</span>
+          <span className="text-[11px] opacity-85 mt-1 tracking-wide">KCAL RESTANTES</span>
         </div>
-        <div className={`text-2xl font-medium ${budget.surplusOuDeficit > 0 ? 'text-red-500' : 'text-green-600'}`}>
-          {budget.surplusOuDeficit > 0 ? '+' : ''}{budget.surplusOuDeficit}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-bold opacity-90 tracking-wide">BUDGET CALORIQUE DU JOUR</div>
+        <div className="text-[13px] mt-2 opacity-75">
+          {budget.kcalConsommees} / {budget.budgetJour} kcal consommées
+          {budget.surplusOuDeficit > 0 && (
+            <span className="ml-1">· dépassement de {budget.surplusOuDeficit} kcal</span>
+          )}
         </div>
-        <div className="text-xs text-gray-400 mt-1">kcal · budget {budget.budgetJour} kcal</div>
-        {showDetail && (
-          <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl p-4 shadow-lg z-10 text-xs text-gray-600">
-            <div className="font-medium text-gray-700 mb-2">📊 Calcul du budget</div>
-            <div className="space-y-1">
-              <div className="flex justify-between"><span>TMB</span><span>+{budget.tmb} kcal</span></div>
-              <div className="flex justify-between"><span>Effet thermique (~10%)</span><span>+{Math.round(budget.tmb * 0.1)} kcal</span></div>
-              <div className="flex justify-between"><span>👟 Pas ({(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')})</span><span>+{budget.kcalPas} kcal</span></div>
-              <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budget.kcalSport} kcal</span></div>
-              <div className="border-t border-gray-100 pt-1 mt-1 flex justify-between font-medium text-gray-700"><span>Dépense totale</span><span>{budget.depenseTotal} kcal</span></div>
-              <div className="flex justify-between text-red-500"><span>Déficit cible</span><span>-{budget.deficitCible} kcal</span></div>
-              <div className="border-t border-gray-100 pt-1 mt-1 flex justify-between font-medium text-blue-700"><span>Budget du jour</span><span>{budget.budgetJour} kcal</span></div>
-            </div>
+        <div className="grid grid-cols-3 gap-2.5 mt-5">
+          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
+            <div className="text-[11px] opacity-80">TMB</div>
+            <div className="text-lg font-extrabold mt-0.5">{budget.tmb}</div>
           </div>
-        )}
+          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
+            <div className="text-[11px] opacity-80">Pas · {nbPas.toLocaleString('fr-FR')}</div>
+            <div className="text-lg font-extrabold mt-0.5">+{budget.kcalPas}</div>
+          </div>
+          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
+            <div className="text-[11px] opacity-80">Sport</div>
+            <div className="text-lg font-extrabold mt-0.5">+{budget.kcalSport}</div>
+          </div>
+        </div>
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <div className="text-xs text-gray-400 mb-1">Séances cette semaine</div>
-        <div className="text-2xl font-medium">{seancesSemaine}</div>
-        <div className="text-xs text-gray-400 mt-1">/ 4 objectif</div>
-      </div>
-      <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <div className="text-xs text-gray-400 mb-1">Pas aujourd'hui</div>
-        <div className="text-2xl font-medium">{(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')}</div>
-        <div className="text-xs text-gray-400 mt-1">objectif {(objectifs?.objectif_pas || 10000).toLocaleString('fr-FR')}</div>
-      </div>
-    </div>
+
+      {showDetail && (
+        <div
+          onClick={e => e.stopPropagation()}
+          className="absolute top-full left-0 mt-2 w-72 bg-white border border-[#f3eee9] rounded-xl p-4 shadow-lg z-10 text-xs text-gray-600 cursor-default"
+        >
+          <div className="font-medium text-[#2a1a12] mb-2">📊 Calcul du budget</div>
+          <div className="space-y-1">
+            <div className="flex justify-between"><span>TMB</span><span>+{budget.tmb} kcal</span></div>
+            <div className="flex justify-between"><span>Effet thermique (~10%)</span><span>+{Math.round(budget.tmb * 0.1)} kcal</span></div>
+            <div className="flex justify-between"><span>👟 Pas ({nbPas.toLocaleString('fr-FR')})</span><span>+{budget.kcalPas} kcal</span></div>
+            <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budget.kcalSport} kcal</span></div>
+            <div className="border-t border-gray-100 pt-1 mt-1 flex justify-between font-medium text-[#2a1a12]"><span>Dépense totale</span><span>{budget.depenseTotal} kcal</span></div>
+            <div className="flex justify-between text-red-500"><span>Déficit cible</span><span>-{budget.deficitCible} kcal</span></div>
+            <div className="border-t border-gray-100 pt-1 mt-1 flex justify-between font-medium text-[#ff6b4a]"><span>Budget du jour</span><span>{budget.budgetJour} kcal</span></div>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }

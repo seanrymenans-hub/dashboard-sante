@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import Navigation from './components/Navigation'
 import WithingsSync from './components/WithingsSync'
@@ -10,6 +10,8 @@ import Sport from './components/Sport'
 import CourseAnalyse from './components/CourseAnalyse'
 import SuggestionSeance from './components/SuggestionSeance'
 import CoachIA from './components/CoachIA'
+import CartePoids from './components/CartePoids'
+import MiniStats from './components/MiniStats'
 import Streak from './components/Streak'
 import Parametres from './components/Parametres'
 import NutritionLayout from './components/NutritionLayout'
@@ -36,7 +38,6 @@ export default function Home() {
   const [planSemaine, setPlanSemaine] = useState<any>(null)
   const [coachSummary, setCoachSummary] = useState<any>(null)
   const [compositionAnalyse, setCompositionAnalyse] = useState<any>(null)
-  const [showBudgetDetail, setShowBudgetDetail] = useState(false)
 
   const fetchData = useCallback(async () => {
     const today = getTodayStr()
@@ -89,116 +90,107 @@ export default function Home() {
     )
   }, [loading, today, budget.budgetJour, budget.tmb, budget.kcalPas, budget.kcalSport, budget.deficitCible])
 
+  // Filet de sécurité : si le budget d'HIER s'est figé avec kcal_pas à 0 parce
+  // que la synchro Apple Health n'était pas encore arrivée au moment où la page
+  // a été chargée hier, on le recalcule silencieusement ici, une fois que les
+  // vrais pas d'hier sont là. Ne se déclenche qu'UNE SEULE FOIS par session
+  // (via dejaVerifie.current) pour éviter tout risque de boucle de re-render.
+  const dejaVerifie = useRef(false)
+
+  useEffect(() => {
+    if (loading || dejaVerifie.current) return
+    dejaVerifie.current = true
+
+    const hierDate = new Date()
+    hierDate.setDate(hierDate.getDate() - 1)
+    const hierStr = `${hierDate.getFullYear()}-${String(hierDate.getMonth() + 1).padStart(2, '0')}-${String(hierDate.getDate()).padStart(2, '0')}`
+
+    const budgetHier = dailyBudgets.find(b => b.date === hierStr)
+    const pasHier = pas.find(p => p.date === hierStr)
+
+    if (!budgetHier || !pasHier) return // rien à corriger si l'une des deux données manque
+
+    const nbPasReel = pasHier.nb_pas || 0
+    const seancesHier = seances.filter(s => s.date === hierStr)
+    const pasDesCoursesHier = seancesHier
+      .filter(s => s.type === 'course')
+      .reduce((sum, s) => sum + Math.round((parseFloat(s.distance) || 0) * 1280), 0)
+    const kcalPasReel = Math.round(Math.max(0, nbPasReel - pasDesCoursesHier) * 0.04)
+
+    // Le cas qu'on corrige : le budget a été figé à kcal_pas=0 alors qu'on a
+    // bien des pas réels pour cette date désormais.
+    if ((budgetHier.kcal_pas || 0) === 0 && kcalPasReel > 0) {
+      const kcalSportHier = seancesHier.reduce((s, r) => s + (r.kcal || 0), 0)
+      const tefHier = budgetHier.tef || Math.round((budgetHier.tmb || budget.tmb) * 0.1)
+      const depenseTotalHier = (budgetHier.tmb || budget.tmb) + kcalSportHier + kcalPasReel + tefHier
+      const budgetJourHier = Math.max(1200, depenseTotalHier - (budgetHier.deficit_cible || budget.deficitCible))
+
+      supabase.from('daily_budget').upsert(
+        {
+          date: hierStr,
+          budget_jour: budgetJourHier,
+          tmb: budgetHier.tmb,
+          kcal_pas: kcalPasReel,
+          kcal_sport: kcalSportHier,
+          tef: tefHier,
+          deficit_cible: budgetHier.deficit_cible || budget.deficitCible,
+        },
+        { onConflict: 'date' }
+      )
+    }
+  }, [loading])
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-gray-400">Chargement...</div>
     </div>
   )
 
-  const pasAujourdhui = pas.find(p => p.date === today)
-  const kcalAujourdhui = budget.kcalConsommees
-  const kcalObj = budget.budgetJour
-
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-medium">Dashboard santé</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          </div>
-          <button onClick={() => setShowParametres(true)} className="text-sm border border-gray-200 rounded-lg px-4 py-2 bg-white hover:bg-gray-50">
-            ⚙️ Paramètres
-          </button>
-        </div>
+    <div className="min-h-screen flex bg-gradient-to-br from-[#fff3ea] to-[#ffeee0]">
+      <Navigation ongletActif={onglet} setOnglet={setOnglet} onOpenParametres={() => setShowParametres(true)} userName="Sean" userPlan="Health Engine" />
 
-        <Navigation ongletActif={onglet} setOnglet={setOnglet} />
+      <main className="flex-1 min-w-0 px-9 py-[30px]">
+        {onglet === 'accueil' && (
+          <header className="flex justify-between items-center mb-7">
+            <div>
+              <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">
+                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+              <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+                Salut Sean 👋
+              </h1>
+            </div>
+          </header>
+        )}
 
         {onglet === 'accueil' && (
-          <div>
-            <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
-
-            <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-              <div className="font-medium mb-4">Progression vers l'objectif</div>
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-500">Poids · {prog.poidsDepart} → {prog.poidsObjectif} kg</span>
-                  <span className="font-medium">{prog.progressionPct}%</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded">
-                  <div className="h-2 bg-green-500 rounded transition-all" style={{ width: prog.progressionPct + '%' }} />
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {prog.kgPerdus.toFixed(1)} kg perdus · {prog.kgRestants.toFixed(1)} kg restants
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <button
-                    onClick={() => setShowBudgetDetail(!showBudgetDetail)}
-                    className="text-gray-500 hover:text-blue-500 transition-colors flex items-center gap-1"
-                  >
-                    Calories aujourd'hui <span className="text-xs">ℹ️</span>
-                  </button>
-                  <span className="font-medium">{kcalAujourdhui} / {kcalObj} kcal</span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded">
-                  <div className="h-2 bg-blue-400 rounded transition-all" style={{ width: Math.min(100, Math.round(kcalAujourdhui / kcalObj * 100)) + '%' }} />
-                </div>
-
-                {showBudgetDetail && (
-                  <div className="mt-3 bg-blue-50 rounded-xl p-4 text-xs text-gray-600">
-                    <div className="font-medium text-gray-700 mb-2">📊 Calcul du budget calorique</div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between">
-                        <span>TMB (métabolisme de base)</span>
-                        <span className="font-medium">+{budget.tmb} kcal</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Effet thermique (digestion ~10%)</span>
-                        <span className="font-medium">+{Math.round(budget.tmb * 0.1)} kcal</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>👟 Pas ({(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')} pas)</span>
-                        <span className="font-medium">+{budget.kcalPas} kcal</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>🏋️ Sport du jour</span>
-                        <span className="font-medium">+{budget.kcalSport} kcal</span>
-                      </div>
-                      <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-gray-700">
-                        <span>Dépense totale</span>
-                        <span>{budget.depenseTotal} kcal</span>
-                      </div>
-                      <div className="flex justify-between text-red-500">
-                        <span>Déficit cible</span>
-                        <span>-{budget.deficitCible} kcal</span>
-                      </div>
-                      <div className="border-t border-blue-200 pt-1 mt-1 flex justify-between font-medium text-blue-700">
-                        <span>Budget du jour</span>
-                        <span>{budget.budgetJour} kcal</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-lg">
-                🔮 À ce rythme, objectif atteint vers le <strong className="text-gray-800">{prog.dateEstimeeObjectif?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) || 'Objectif atteint !'}</strong>
+          <div className="grid grid-cols-[1.55fr_1fr] gap-[22px] items-stretch">
+            <div className="flex flex-col gap-[22px]">
+              <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
+              <div className="flex-1">
+                <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
               </div>
             </div>
 
-            <Streak repas={repas} objectifs={objectifs} pas={pas} seances={seances} dailyBudgets={dailyBudgets} budget={budget} />
-            <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
+            <div className="flex flex-col gap-[22px]">
+              <CartePoids poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
+              <MiniStats seances={seances} pas={pas} objectifs={objectifs} />
+              <Streak repas={repas} objectifs={objectifs} pas={pas} seances={seances} dailyBudgets={dailyBudgets} budget={budget} />
+            </div>
           </div>
         )}
-
         {onglet === 'corps' && (
           <div>
-            <WithingsSync onRefresh={fetchData} syncPasOnly={false} />
+            <div className="flex justify-between items-center mb-[22px]">
+              <div>
+                <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">Composition corporelle</div>
+                <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+                  Ton corps en détail
+                </h1>
+              </div>
+              <WithingsSync onRefresh={fetchData} syncPasOnly={false} />
+            </div>
             <Composition composition={composition} onRefresh={fetchData} analyseIA={compositionAnalyse} onAnalyseUpdate={setCompositionAnalyse} />
             <GraphiquePoids poids={poids} objectifs={objectifs} />
           </div>
@@ -255,7 +247,7 @@ export default function Home() {
             onSave={fetchData}
           />
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }

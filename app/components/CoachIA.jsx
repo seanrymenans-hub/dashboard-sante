@@ -27,74 +27,71 @@ export default function CoachIA({ poids, repas, seances, composition, objectifs 
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="font-medium">Coach IA</div>
-          <div className="text-xs text-gray-400 mt-1">Bilan de la semaine + conseils personnalisés</div>
-        </div>
-        <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">IA</span>
+    <section className="h-full rounded-[26px] bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] p-[26px_28px] text-white flex flex-col overflow-hidden relative">
+      <div className="flex items-center gap-2.5 mb-3.5">
+        <span className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-[#ff6b4a] to-[#ff9248] flex items-center justify-center text-[15px] flex-none">✦</span>
+        <span className="text-sm font-extrabold tracking-wide">COACH IA</span>
       </div>
 
       {!data && !loading && (
-        <div className="text-center py-6">
-          <div className="text-sm text-gray-400 mb-4">
-            Ton coach analyse toutes tes données pour te donner un bilan personnalisé
-          </div>
-          <button onClick={generer} className="bg-black text-white rounded-lg px-6 py-2 text-sm">
+        <div className="flex-1 relative flex flex-col">
+          <p className="text-[15px] leading-relaxed opacity-90 mb-4 max-w-[420px]">
+            Ton coach peut analyser toutes tes données pour te donner un bilan personnalisé de ta semaine.
+          </p>
+          <button
+            onClick={generer}
+            className="self-start border-none bg-white/[0.12] hover:bg-white/20 text-white font-bold text-[13px] px-4 py-2.5 rounded-xl transition-all"
+          >
             Voir mon bilan ✨
           </button>
+          <span className="pointer-events-none select-none absolute -right-4 -bottom-6 text-[160px] leading-none opacity-[0.06]">✦</span>
         </div>
       )}
 
       {loading && (
-        <div className="text-center py-6 text-sm text-gray-400">
-          Ton coach analyse ta semaine...
-        </div>
+        <p className="text-[15px] opacity-80">Ton coach analyse ta semaine...</p>
       )}
 
       {erreur && (
-        <div className="text-center py-4 text-sm text-red-500">{erreur}</div>
+        <p className="text-[15px] text-red-300">{erreur}</p>
       )}
 
       {data && (
         <div>
-          {/* Bilan */}
-          <div className="bg-gray-50 rounded-xl p-4 mb-4">
-            <div className="text-sm text-gray-700 leading-relaxed">{data.bilan}</div>
-          </div>
+          <p className="m-0 text-base leading-relaxed font-medium">{data.bilan}</p>
 
-          {/* Points positifs */}
           {data.positifs?.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-medium text-green-600 mb-2">✓ Ce qui va bien</div>
+            <div className="mt-4">
+              <div className="text-xs font-bold opacity-80 mb-2 tracking-wide">CE QUI VA BIEN</div>
               {data.positifs.map((p, i) => (
                 <div key={i} className="flex items-start gap-2 mb-1">
-                  <span className="text-green-500 text-sm mt-0.5">✓</span>
-                  <span className="text-sm text-gray-600">{p}</span>
+                  <span className="text-[#7be8b5] text-sm mt-0.5">✓</span>
+                  <span className="text-sm opacity-90">{p}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Conseils */}
           {data.conseils?.length > 0 && (
-            <div>
-              <div className="text-xs font-medium text-purple-600 mb-2">💡 Pour aller plus vite</div>
+            <div className="mt-4">
+              <div className="text-xs font-bold opacity-80 mb-2 tracking-wide">POUR ALLER PLUS VITE</div>
               {data.conseils.map((c, i) => (
-                <div key={i} className="border border-gray-100 rounded-xl p-3 mb-2">
-                  <div className="text-sm font-medium text-gray-800 mb-1">{c.titre}</div>
-                  <div className="text-xs text-gray-500 leading-relaxed">{c.detail}</div>
+                <div key={i} className="bg-white/[0.08] rounded-xl p-3 mb-2">
+                  <div className="text-sm font-bold mb-1">{c.titre}</div>
+                  <div className="text-xs opacity-80 leading-relaxed">{c.detail}</div>
                 </div>
               ))}
             </div>
           )}
 
-          <button onClick={generer} className="text-xs text-gray-400 underline mt-2">
+          <button
+            onClick={generer}
+            className="mt-4 border-none bg-white/[0.12] hover:bg-white/20 text-white font-bold text-[13px] px-4 py-2.5 rounded-xl transition-all"
+          >
             Regénérer le bilan
           </button>
         </div>
       )}
-    </div>
+    </section>
   )
 }

@@ -38,7 +38,17 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
       const res = await fetch('/api/suggestion-repas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repas, objectifs, composition, poids, preferences })
+        body: JSON.stringify({
+          repas, objectifs, composition, poids, preferences,
+          // Valeurs déjà calculées côté client — évite que l'IA doive
+          // re-déduire le budget restant à partir de repas/objectifs bruts,
+          // ce qui produisait des suggestions mal calibrées (ex: 300 kcal
+          // alors qu'il restait bien plus de marge).
+          kcalRestant,
+          protRestant: Math.max(0, protObj - protMange),
+          carbRestant: Math.max(0, carbObj - carbMange),
+          lipRestant: Math.max(0, lipObj - lipMange),
+        })
       })
       const data = await res.json()
       if (data.suggestions) setSuggestions(data.suggestions)
@@ -47,51 +57,51 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
   }
 
   const restants = [
-    { label: 'Calories', value: kcalRestant, unit: 'kcal', color: 'bg-red-50 text-red-700' },
-    { label: 'Protéines', value: Math.max(0, protObj - protMange), unit: 'g', color: 'bg-blue-50 text-blue-700' },
-    { label: 'Glucides', value: Math.max(0, carbObj - carbMange), unit: 'g', color: 'bg-amber-50 text-amber-700' },
-    { label: 'Lipides', value: Math.max(0, lipObj - lipMange), unit: 'g', color: 'bg-green-50 text-green-700' },
+    { label: 'Calories', value: kcalRestant, unit: 'kcal', bg: '#ffe4dc', text: '#e2553f' },
+    { label: 'Protéines', value: Math.max(0, protObj - protMange), unit: 'g', bg: '#dceeff', text: '#185fa5' },
+    { label: 'Glucides', value: Math.max(0, carbObj - carbMange), unit: 'g', bg: '#faeeda', text: '#854f0b' },
+    { label: 'Lipides', value: Math.max(0, lipObj - lipMange), unit: 'g', bg: '#d4f5ec', text: '#0f6e56' },
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-[22px]">
 
       {/* Macros restantes */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <div className="font-medium mb-4">Il te reste aujourd'hui</div>
+      <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+        <div className="text-[18px] font-extrabold text-[#2a1a12] mb-5">Il te reste aujourd'hui</div>
         <div className="grid grid-cols-4 gap-3">
           {restants.map(item => (
-            <div key={item.label} className={`rounded-xl p-3 text-center ${item.color}`}>
-              <div className="text-xl font-bold">{item.value}</div>
-              <div className="text-xs mt-1 opacity-80">{item.unit} {item.label}</div>
+            <div key={item.label} className="rounded-2xl p-4 text-center" style={{ background: item.bg }}>
+              <div className="text-xl font-extrabold" style={{ color: item.text }}>{item.value}</div>
+              <div className="text-xs mt-1 font-medium opacity-80" style={{ color: item.text }}>{item.unit} {item.label}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Préférences */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
+      <div className="rounded-[26px] bg-white shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)] overflow-hidden">
+        <div className="flex justify-between items-center px-7 py-5">
           <div>
-            <div className="font-medium">Mes préférences alimentaires</div>
+            <div className="text-[18px] font-extrabold text-[#2a1a12]">Mes préférences alimentaires</div>
             {!editingPrefs && (
-              <div className="text-xs text-gray-400 mt-1">
+              <div className="text-[13px] text-[#8a807a] mt-1">
                 {preferences ? preferences.slice(0, 80) + (preferences.length > 80 ? '...' : '') : 'Non configuré — suggestions génériques'}
               </div>
             )}
           </div>
           <button
             onClick={() => { setEditingPrefs(!editingPrefs); setTempPrefs(preferences) }}
-            className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-50"
+            className="text-[13px] font-semibold border border-[#f3eee9] rounded-xl px-4 py-2 text-[#2a1a12] hover:bg-[#fff3ea] transition-all flex-shrink-0"
           >
             {editingPrefs ? 'Annuler' : preferences ? 'Modifier' : '+ Configurer'}
           </button>
         </div>
 
         {editingPrefs && (
-          <div className="px-6 py-4">
+          <div className="px-7 pb-7">
             <textarea
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 resize-none mb-3"
+              className="w-full border border-[#f3eee9] rounded-xl px-3.5 py-2.5 text-sm text-[#2a1a12] resize-none mb-3"
               rows={4}
               placeholder="Ex: J'aime le poulet, les œufs, le riz. Je n'aime pas le poisson. Je suis sans lactose..."
               value={tempPrefs}
@@ -99,7 +109,7 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
             />
             <button
               onClick={sauvegarderPreferences}
-              className="bg-black text-white rounded-lg px-4 py-2 text-sm"
+              className="bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white rounded-xl px-5 py-2.5 text-sm font-bold shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)]"
             >
               Sauvegarder
             </button>
@@ -108,21 +118,23 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
       </div>
 
       {/* Suggestions IA */}
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
-          <div>
-            <div className="font-medium">Suggestions personnalisées</div>
-            <div className="text-xs text-gray-400 mt-1">
-              Basées sur tes macros restantes{preferences ? ' et tes préférences' : ''}
+      <div className="rounded-[26px] bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white overflow-hidden">
+        <div className="flex justify-between items-center px-7 py-5">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff6b4a] to-[#ff9248] flex items-center justify-center text-[13px] flex-none">✦</span>
+            <div>
+              <div className="text-[15px] font-extrabold">Suggestions personnalisées</div>
+              <div className="text-xs opacity-70 mt-0.5">
+                Basées sur tes macros restantes{preferences ? ' et tes préférences' : ''}
+              </div>
             </div>
           </div>
-          <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">IA</span>
         </div>
 
-        <div className="px-6 py-4">
+        <div className="px-7 pb-7">
           {!suggestions && !loading && (
             <div className="text-center py-6">
-              <div className="text-sm text-gray-400 mb-4">
+              <div className="text-sm opacity-80 mb-4">
                 {kcalRestant > 0
                   ? `Il te reste ${kcalRestant} kcal — l'IA va suggérer quoi manger`
                   : 'Tu as atteint ton objectif calorique 🎉'
@@ -130,7 +142,7 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
               </div>
               <button
                 onClick={genererSuggestions}
-                className="bg-black text-white rounded-lg px-6 py-2 text-sm"
+                className="border-none bg-white/[0.12] hover:bg-white/20 text-white font-bold text-[13px] px-5 py-2.5 rounded-xl transition-all"
               >
                 Générer mes suggestions ✨
               </button>
@@ -138,7 +150,7 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
           )}
 
           {loading && (
-            <div className="text-center py-6 text-sm text-gray-400">
+            <div className="text-center py-6 text-sm opacity-70">
               L'IA analyse tes besoins...
             </div>
           )}
@@ -147,21 +159,21 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
             <div>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {suggestions.map((s, i) => (
-                  <div key={i} className="border border-gray-100 rounded-xl p-4">
-                    <div className="font-medium text-sm mb-1">{s.nom}</div>
-                    <div className="text-xs text-gray-400 mb-3">{s.description}</div>
-                    <div className="flex gap-2 flex-wrap mb-3">
-                      <span className="font-medium text-sm">{s.kcal} kcal</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">P {s.proteines}g</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">G {s.glucides}g</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">L {s.lipides}g</span>
+                  <div key={i} className="bg-white/[0.08] rounded-2xl p-4">
+                    <div className="font-bold text-sm mb-1">{s.nom}</div>
+                    <div className="text-xs opacity-70 mb-3">{s.description}</div>
+                    <div className="flex gap-2 flex-wrap mb-3 items-center">
+                      <span className="font-bold text-sm">{s.kcal} kcal</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#dceeff] text-[#185fa5] font-semibold">P {s.proteines}g</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#faeeda] text-[#854f0b] font-semibold">G {s.glucides}g</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#d4f5ec] text-[#0f6e56] font-semibold">L {s.lipides}g</span>
                     </div>
                     <div className="mb-3">
                       {s.ingredients?.map((ing, j) => (
-                        <div key={j} className="text-xs text-gray-500">· {ing}</div>
+                        <div key={j} className="text-xs opacity-75">· {ing}</div>
                       ))}
                     </div>
-                    <div className="text-xs text-purple-600 bg-purple-50 rounded-lg p-2 italic">
+                    <div className="text-xs bg-white/[0.08] rounded-xl p-2.5 italic opacity-90">
                       {s.raison}
                     </div>
                   </div>
@@ -169,7 +181,7 @@ export default function NutritionSuggestions({ repas, objectifs, composition, po
               </div>
               <button
                 onClick={genererSuggestions}
-                className="text-xs text-gray-400 underline"
+                className="text-xs opacity-70 underline"
               >
                 ↺ Regénérer
               </button>

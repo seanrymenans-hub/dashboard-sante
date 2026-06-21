@@ -113,111 +113,142 @@ export default function PlanRepas({ objectifs, poids, composition, planCache, on
   }
 
   if (loading) return (
-    <div className="bg-white rounded-xl border border-gray-100 p-6 text-center text-sm text-gray-400">
+    <div className="rounded-[26px] bg-white p-8 text-center text-sm text-[#b0a8a2] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
       Chargement du plan...
     </div>
   )
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-[22px]">
 
-      {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <div className="font-medium">Planificateur repas IA</div>
-            <div className="text-xs text-gray-400 mt-1">
-              Semaine du {new Date(semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+      {/* Header + config — une seule carte continue */}
+      <div className="rounded-[26px] bg-white shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)] overflow-hidden">
+        <div className="p-[26px_28px]">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="text-[18px] font-extrabold text-[#2a1a12]">Planificateur repas IA</div>
+              <div className="text-[13px] text-[#8a807a] mt-1">
+                {plan
+                  ? `Semaine du ${new Date(semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+                  : "L'IA compose 7 jours de repas selon tes macros et tes goûts"}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {plan && (
+                <button onClick={() => setShowCourses(!showCourses)} className="text-[13px] font-semibold border border-[#f3eee9] rounded-xl px-4 py-2 text-[#2a1a12] hover:bg-[#fff3ea] transition-all">
+                  🛒 Courses
+                </button>
+              )}
+              <button
+                onClick={() => setShowConfig(!showConfig)}
+                className={`text-[13px] font-bold rounded-xl px-4 py-2 transition-all ${
+                  showConfig
+                    ? 'border border-[#f3eee9] text-[#2a1a12] hover:bg-[#fff3ea]'
+                    : 'bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)]'
+                }`}
+              >
+                {showConfig ? 'Annuler' : plan ? '↺ Regénérer' : '✨ Planifier'}
+              </button>
             </div>
           </div>
-          <div className="flex gap-2">
-            {plan && (
-              <button onClick={() => setShowCourses(!showCourses)} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5 hover:bg-gray-50">
-                🛒 Courses
-              </button>
-            )}
-            <button onClick={() => setShowConfig(!showConfig)} className="text-sm border border-gray-200 rounded-lg px-4 py-1.5 hover:bg-gray-50">
-              {showConfig ? 'Annuler' : plan ? '↺ Regénérer' : '✨ Planifier'}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Config — cartes par jour */}
-      {showConfig && (
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <div className="font-medium mb-2">Configure ta semaine</div>
-          <div className="text-xs text-gray-400 mb-4">Active les repas, ajuste les portions et coche ♻️ si tu veux des restes (+1 portion)</div>
-
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {config.map((jour, jourIdx) => (
-              <div key={jour.nom} className="bg-gray-50 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-gray-700">{jour.nom.slice(0, 3)}</span>
-                  <input
-                    type="checkbox"
-                    checked={jour.actif !== false}
-                    onChange={e => toggleJour(jourIdx, e.target.checked)}
-                    className="w-3 h-3"
-                  />
+          {/* Aperçu de la semaine vide — uniquement avant la première génération et hors config */}
+          {!plan && !showConfig && (
+            <div className="grid grid-cols-7 gap-2 mt-6">
+              {JOURS_SEMAINE.map(jour => (
+                <div key={jour} className="bg-[#f9f6f3] rounded-xl py-3.5 flex flex-col items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-[#b0a8a2]">{jour.slice(0, 3)}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8e1da]" />
                 </div>
-                {REPAS_TYPES.map(r => {
-                  const repas = jour.repas[r.id]
-                  return (
-                    <div key={r.id} className={`mb-3 p-2 rounded-lg border transition-all ${repas.actif ? 'bg-white border-gray-200' : 'bg-gray-100 border-transparent opacity-50'}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">{r.emoji}</span>
-                        <button
-                          onClick={() => updateConfig(jourIdx, r.id, 'actif', !repas.actif)}
-                          className={`w-5 h-5 rounded-full text-xs flex items-center justify-center transition-all ${repas.actif ? 'bg-black text-white' : 'bg-gray-300 text-gray-500'}`}
-                        >
-                          {repas.actif ? '✓' : '×'}
-                        </button>
-                      </div>
-                      {repas.actif && (
-                        <>
-                          <div className="flex items-center justify-between mb-1">
-                            <button onClick={() => updateConfig(jourIdx, r.id, 'portions', Math.max(1, repas.portions - 1))} className="w-5 h-5 bg-gray-100 rounded text-xs flex items-center justify-center">−</button>
-                            <span className="text-xs font-medium">{repas.portions}</span>
-                            <button onClick={() => updateConfig(jourIdx, r.id, 'portions', Math.min(10, repas.portions + 1))} className="w-5 h-5 bg-gray-100 rounded text-xs flex items-center justify-center">+</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Config — intégrée directement, pas de carte séparée */}
+        {showConfig && (
+          <div className="px-[28px] pb-[28px] pt-1 border-t border-[#f3eee9] mt-1">
+            <div className="text-[13px] text-[#8a807a] my-5">Active les repas, ajuste les portions et coche ♻️ si tu veux des restes (+1 portion)</div>
+
+            <div className="grid grid-cols-7 gap-3 mb-6">
+              {config.map((jour, jourIdx) => (
+                <div key={jour.nom} className={`rounded-2xl p-3 transition-all ${jour.actif !== false ? 'bg-[#f9f6f3]' : 'bg-[#f9f6f3] opacity-50'}`}>
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#ece5dd]">
+                    <span className="text-[13px] font-extrabold text-[#2a1a12]">{jour.nom.slice(0, 3)}</span>
+                    <input
+                      type="checkbox"
+                      checked={jour.actif !== false}
+                      onChange={e => toggleJour(jourIdx, e.target.checked)}
+                      className="w-4 h-4 accent-[#ff6b4a]"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {REPAS_TYPES.map(r => {
+                      const repas = jour.repas[r.id]
+                      const repasColors = {
+                        petitDejeuner: { bg: '#faeeda', text: '#854f0b' },
+                        dejeuner: { bg: '#dceeff', text: '#185fa5' },
+                        diner: { bg: '#ece6ff', text: '#534ab7' },
+                      }
+                      const rc = repasColors[r.id]
+                      return (
+                        <div key={r.id} className="rounded-xl p-2.5" style={{ background: repas.actif ? rc.bg : '#f0ebe5' }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold flex items-center gap-1" style={{ color: repas.actif ? rc.text : '#b0a8a2' }}>
+                              {r.emoji} {r.label}
+                            </span>
+                            <button
+                              onClick={() => updateConfig(jourIdx, r.id, 'actif', !repas.actif)}
+                              className="w-4 h-4 rounded-full text-[10px] flex items-center justify-center flex-shrink-0"
+                              style={{ background: repas.actif ? rc.text : '#d8cfc8', color: 'white' }}
+                            >
+                              {repas.actif ? '✓' : '×'}
+                            </button>
                           </div>
-                          {r.id === 'diner' && (
+                          {repas.actif && (
+                            <div className="flex items-center justify-between mt-2">
+                              <button onClick={() => updateConfig(jourIdx, r.id, 'portions', Math.max(1, repas.portions - 1))} className="w-5 h-5 bg-white/70 rounded text-xs flex items-center justify-center font-bold" style={{ color: rc.text }}>−</button>
+                              <span className="text-xs font-extrabold" style={{ color: rc.text }}>{repas.portions}</span>
+                              <button onClick={() => updateConfig(jourIdx, r.id, 'portions', Math.min(10, repas.portions + 1))} className="w-5 h-5 bg-white/70 rounded text-xs flex items-center justify-center font-bold" style={{ color: rc.text }}>+</button>
+                            </div>
+                          )}
+                          {repas.actif && r.id === 'diner' && (
                             <button
                               onClick={() => updateConfig(jourIdx, r.id, 'restes', !repas.restes)}
-                              className={`w-full text-xs py-0.5 rounded transition-all ${repas.restes ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'}`}
+                              className={`w-full text-[10px] py-1 rounded-lg font-bold mt-2 transition-all ${repas.restes ? 'bg-white text-[#854f0b]' : 'bg-white/50 text-[#b0a8a2]'}`}
                             >
                               ♻️ restes
                             </button>
                           )}
-                        </>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <button
-            onClick={generer}
-            disabled={generating}
-            className="w-full bg-black text-white rounded-lg py-2.5 text-sm disabled:opacity-40"
-          >
-            {generating ? "L'IA compose ta semaine..." : 'Générer mon plan ✨'}
-          </button>
-        </div>
-      )}
+            <button
+              onClick={generer}
+              disabled={generating}
+              className="w-full bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white rounded-xl py-3 text-sm font-bold disabled:opacity-40"
+            >
+              {generating ? "L'IA compose ta semaine..." : 'Générer mon plan ✨'}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Liste de courses */}
       {showCourses && plan?.liste_courses && (
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <div className="font-medium mb-4">🛒 Liste de courses</div>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+          <div className="text-[18px] font-extrabold text-[#2a1a12] mb-5">🛒 Liste de courses</div>
+          <div className="grid grid-cols-2 gap-5">
             {Object.entries(plan.liste_courses).map(([categorie, items]) => (
               <div key={categorie}>
-                <div className="text-xs font-medium text-gray-500 mb-2">{categorie}</div>
+                <div className="text-xs font-bold text-[#c2876b] uppercase tracking-wide mb-2.5">{categorie}</div>
                 {items.map((item, i) => (
-                  <div key={i} className="text-xs text-gray-600 mb-1">· {item}</div>
+                  <div key={i} className="text-[13px] text-[#5a4f48] mb-1.5">· {item}</div>
                 ))}
               </div>
             ))}
@@ -227,16 +258,16 @@ export default function PlanRepas({ objectifs, poids, composition, planCache, on
 
       {/* Plan affiché */}
       {plan?.plan && !showConfig && (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           {plan.plan.map((jour, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-              <div className="px-6 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50">
-                <div className="font-medium text-sm">{jour.nom}</div>
-                <div className="text-xs text-gray-400">
+            <div key={i} className="rounded-[22px] bg-white shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)] overflow-hidden">
+              <div className="px-6 py-3.5 flex justify-between items-center bg-[#fff3ea]">
+                <div className="font-bold text-sm text-[#2a1a12]">{jour.nom}</div>
+                <div className="text-xs font-semibold text-[#c2876b]">
                   {[jour.petitDejeuner, jour.dejeuner, jour.diner].filter(Boolean).reduce((s, r) => s + (r.kcal || 0), 0)} kcal
                 </div>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-[#f6f1ec]">
                 {[
                   { key: 'petitDejeuner', label: 'Petit-déj', emoji: '🌅' },
                   { key: 'dejeuner', label: 'Déjeuner', emoji: '☀️' },
@@ -245,53 +276,42 @@ export default function PlanRepas({ objectifs, poids, composition, planCache, on
                   const repas = jour[key]
                   if (!repas) return null
                   return (
-                    <div key={key} className="px-6 py-3">
-                      <div className="flex justify-between items-start mb-1">
+                    <div key={key} className="px-6 py-3.5">
+                      <div className="flex justify-between items-start mb-1.5">
                         <div className="flex-1">
-                          <span className="text-xs text-gray-400 mr-2">{emoji} {label}</span>
-                          <span className="text-sm font-medium text-gray-800">{repas.nom}</span>
+                          <span className="text-xs text-[#b0a8a2] mr-2">{emoji} {label}</span>
+                          <span className="text-sm font-bold text-[#2a1a12]">{repas.nom}</span>
                           {repas.restesNote && (
-                            <div className="mt-1">
-                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">♻️ {repas.restesNote}</span>
+                            <div className="mt-1.5">
+                              <span className="text-xs font-semibold text-[#854f0b] bg-[#faeeda] px-2.5 py-1 rounded-full">♻️ {repas.restesNote}</span>
                             </div>
                           )}
                         </div>
-                        <span className="text-xs font-medium text-gray-600 flex-shrink-0 ml-2">{repas.kcal} kcal</span>
+                        <span className="text-xs font-bold text-[#5a4f48] flex-shrink-0 ml-2">{repas.kcal} kcal</span>
                       </div>
-                      <div className="flex gap-3 text-xs mb-1">
-                        <span className="text-blue-500">P {repas.proteines}g</span>
-                        <span className="text-amber-500">G {repas.glucides}g</span>
-                        <span className="text-green-500">L {repas.lipides}g</span>
+                      <div className="flex gap-3 text-xs mb-1.5 font-semibold">
+                        <span className="text-[#378ADD]">P {repas.proteines}g</span>
+                        <span className="text-[#EF9F27]">G {repas.glucides}g</span>
+                        <span className="text-[#16c79a]">L {repas.lipides}g</span>
                       </div>
-                      <div className="text-xs text-gray-400">{repas.ingredients?.join(' · ')}</div>
+                      <div className="text-xs text-[#b0a8a2]">{repas.ingredients?.join(' · ')}</div>
                     </div>
                   )
                 })}
-              {jour.suggestionProteines && (
-                <div className="px-6 py-3 bg-blue-50 border-t border-blue-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-500">💪</span>
-                    <span className="text-xs text-blue-700">{jour.suggestionProteines}</span>
+                {jour.suggestionProteines && (
+                  <div className="px-6 py-3.5 bg-[#dceeff]">
+                    <div className="flex items-center gap-2">
+                      <span>💪</span>
+                      <span className="text-xs font-semibold text-[#185fa5]">{jour.suggestionProteines}</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* État vide */}
-      {!plan && !showConfig && (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="text-3xl mb-3">🍽️</div>
-          <div className="font-medium text-gray-700 mb-2">Aucun plan cette semaine</div>
-          <div className="text-sm text-gray-400 mb-6">L'IA compose ta semaine selon tes objectifs et tes aliments préférés</div>
-          <button onClick={() => setShowConfig(true)} className="bg-black text-white rounded-lg px-6 py-2.5 text-sm">
-            Planifier ma semaine ✨
-          </button>
-        </div>
-      )}
     </div>
   )
 }
