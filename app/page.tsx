@@ -8,6 +8,7 @@ import GraphiquePoids from './components/GraphiquePoids'
 import Composition from './components/Composition'
 import Sport from './components/Sport'
 import CourseAnalyse from './components/CourseAnalyse'
+import AnalyseActivite from './components/AnalyseActivite'
 import SuggestionSeance from './components/SuggestionSeance'
 import CoachIA from './components/CoachIA'
 import CartePoids from './components/CartePoids'
@@ -215,11 +216,20 @@ export default function Home() {
         )}
 
         {onglet === 'sport' && (
-          <div>
+          <div className="flex flex-col gap-[22px]">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">Activité</div>
+                <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+                  Ton sport cette semaine
+                </h1>
+              </div>
+              <WithingsSync onRefresh={fetchData} syncPasOnly={true} />
+            </div>
             <SuggestionSeance seances={seances} repas={repas} poids={poids} objectifs={objectifs} composition={composition} />
-            <WithingsSync onRefresh={fetchData} syncPasOnly={true} />
-            <Sport seances={seances} onRefresh={fetchData} poids={poids} pas={pas} />
-            <CourseAnalyse seances={seances} repas={repas} objectifs={objectifs} onRefresh={fetchData} />
+            <Sport seances={seances} onRefresh={fetchData} poids={poids} pas={pas} budget={budget} />
+            <CourseAnalyse seances={seances} repas={repas} objectifs={objectifs} macros={macros} onRefresh={fetchData} />
+            <AnalyseActivite seances={seances} repas={repas} objectifs={objectifs} macros={macros} />
           </div>
         )}
 

@@ -1,5 +1,5 @@
 export async function POST(request) {
-  const { courses, repas, objectifs, periode } = await request.json()
+  const { courses, repas, objectifs, periode, macros } = await request.json()
 
   const moyKcal = repas.length > 0
     ? Math.round([...new Set(repas.map(r => r.date))].reduce((s, date) => {
@@ -25,8 +25,8 @@ ${coursesStr}
 NUTRITION MOYENNE SUR LA PÉRIODE :
 - Calories moyennes/jour : ${moyKcal} kcal
 - Protéines moyennes/jour : ${moyProt}g
-- Objectif calorique : ${objectifs?.kcal_journalier || 1850} kcal
-- Objectif protéines : ${objectifs?.proteines_objectif || 150}g
+- Objectif calorique (dynamique, varie selon l'activité du jour) : ${objectifs?.kcal_journalier || 1850} kcal
+- Objectif protéines (2g/kg de poids actuel) : ${macros?.proteines || objectifs?.proteines_objectif || 150}g
 
 Analyse :
 1. La progression des performances (allure, distance, volume)

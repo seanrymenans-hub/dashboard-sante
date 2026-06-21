@@ -1,5 +1,5 @@
 export async function POST(request) {
-  const { repas, objectifs, tendances, budgetMoyen7j } = await request.json()
+  const { repas, objectifs, tendances, budgetMoyen7j, macros } = await request.json()
 
   const prompt = `Tu es un expert en nutrition. Analyse les habitudes alimentaires de cet utilisateur.
 
@@ -7,10 +7,10 @@ IMPORTANT : Le budget calorique de cet utilisateur est DYNAMIQUE — il varie ch
 Le budget calorique moyen estimé est de ${budgetMoyen7j} kcal/jour (TMB + effet thermique - déficit cible).
 Compare toujours les calories consommées à ce budget moyen de ${budgetMoyen7j} kcal, pas au TMB seul.
 
-OBJECTIFS NUTRITIONNELS :
-- Protéines : ${objectifs?.proteines_objectif || 150}g/jour
-- Glucides : ${objectifs?.glucides_objectif || 200}g/jour
-- Lipides : ${objectifs?.lipides_objectif || 60}g/jour
+OBJECTIFS NUTRITIONNELS (calculés dynamiquement selon le poids et le budget actuels) :
+- Protéines : ${macros?.proteines || objectifs?.proteines_objectif || 150}g/jour
+- Glucides : ${macros?.glucides || objectifs?.glucides_objectif || 200}g/jour
+- Lipides : ${macros?.lipides || objectifs?.lipides_objectif || 60}g/jour
 - TMB : ${objectifs?.tmb || 1875} kcal
 - Déficit cible : ${objectifs?.deficit_cible || 750} kcal/jour
 

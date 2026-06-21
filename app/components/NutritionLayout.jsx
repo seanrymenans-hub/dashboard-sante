@@ -86,7 +86,7 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
         <Hydratation poids={poids} />
       )}
       {tab === 'analyse' && (
-        <NutritionAnalyse repas={repas} objectifs={objectifs} seances={seances} poids={poids} composition={composition} macros={macros} budget={budget} tendances={tendances} />
+        <NutritionAnalyse repas={repas} objectifs={objectifs} seances={seances} poids={poids} composition={composition} macros={macros} budget={budget} tendances={tendances} dailyBudgets={dailyBudgets} />
       )}
     </div>
   )

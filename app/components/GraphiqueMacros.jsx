@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
 
-export default function GraphiqueMacros({ repas, objectifs }) {
+export default function GraphiqueMacros({ repas, objectifs, macros }) {
   const [periode, setPeriode] = useState(7)
 
   const data = useMemo(() => {
@@ -21,11 +21,15 @@ export default function GraphiqueMacros({ repas, objectifs }) {
     })
   }, [repas, periode])
 
-  const protObj = objectifs?.proteines_objectif || 150
-  const carbObj = objectifs?.glucides_objectif || 250
-  const lipObj = objectifs?.lipides_objectif || 67
+  // Objectifs dynamiques du Health Engine (2g/kg protéines, 25% lipides, reste
+  // en glucides) plutôt que les valeurs fixes objectifs.xxx_objectif réglées
+  // dans Paramètres — pour rester cohérent avec ce qui est affiché ailleurs
+  // dans Nutrition (Aujourd'hui, Suggestions, Analyse utilisent tous `macros`).
+  const protObj = macros?.proteines || objectifs?.proteines_objectif || 150
+  const carbObj = macros?.glucides || objectifs?.glucides_objectif || 250
+  const lipObj = macros?.lipides || objectifs?.lipides_objectif || 67
 
-  const macros = [
+  const macrosConfig = [
     { key: 'proteines', label: 'Protéines', color: '#378ADD', obj: protObj },
     { key: 'glucides', label: 'Glucides', color: '#EF9F27', obj: carbObj },
     { key: 'lipides', label: 'Lipides', color: '#16c79a', obj: lipObj },
@@ -71,7 +75,7 @@ export default function GraphiqueMacros({ repas, objectifs }) {
 
       {/* Objectifs rapides */}
       <div className="flex gap-2 flex-wrap mb-5">
-        {macros.map(m => (
+        {macrosConfig.map(m => (
           <div key={m.label} className="flex items-center gap-2 bg-[#f9f6f3] rounded-xl px-3.5 py-2">
             <div className="w-2 h-2 rounded-full" style={{ background: m.color }} />
             <span className="text-xs text-[#8a807a] font-medium">{m.label}</span>
@@ -82,7 +86,7 @@ export default function GraphiqueMacros({ repas, objectifs }) {
 
       {/* 3 lignes simples, une carte par macro pour éviter de surcharger un seul graphique */}
       <div className="flex flex-col gap-4">
-        {macros.map(m => (
+        {macrosConfig.map(m => (
           <div key={m.key}>
             <div className="text-xs font-bold mb-1.5" style={{ color: m.color }}>{m.label}</div>
             <ResponsiveContainer width="100%" height={110}>

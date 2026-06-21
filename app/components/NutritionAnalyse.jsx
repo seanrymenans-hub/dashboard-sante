@@ -3,7 +3,7 @@ import { useState } from 'react'
 import GraphiqueCalories from './GraphiqueCalories'
 import GraphiqueMacros from './GraphiqueMacros'
 
-export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros, budget, tendances }) {
+export default function NutritionAnalyse({ repas, objectifs, seances, poids, composition, macros, budget, tendances, dailyBudgets }) {
   const [synthese, setSynthese] = useState(null)
   const [loadingIA, setLoadingIA] = useState(false)
 
@@ -16,7 +16,7 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
       const res = await fetch('/api/analyse-nutrition', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repas, objectifs, tendances, budgetMoyen7j })
+        body: JSON.stringify({ repas, objectifs, tendances, budgetMoyen7j, macros })
       })
       const data = await res.json()
       if (data.bilan) setSynthese(data)
@@ -113,8 +113,8 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
       </div>
 
       {/* Graphiques */}
-      <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} />
-      <GraphiqueMacros repas={repas} objectifs={objectifs} />
+      <GraphiqueCalories repas={repas} seances={seances} objectifs={objectifs} budget={budget} dailyBudgets={dailyBudgets} />
+      <GraphiqueMacros repas={repas} objectifs={objectifs} macros={macros} />
 
       {/* Synthèse IA */}
       <div className="rounded-[26px] bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white overflow-hidden">

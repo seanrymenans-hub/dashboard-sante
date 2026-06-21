@@ -24,11 +24,10 @@ function formatAllure(decimal) {
   return `${min}'${String(sec).padStart(2, '0')}/km`
 }
 
-export default function CourseAnalyse({ seances, repas, objectifs, onRefresh }) {
+export default function CourseAnalyse({ seances, repas, objectifs, macros, onRefresh }) {
   const [periode, setPeriode] = useState(90)
-  const [analyseIA, setAnalyseIA] = useState(null)
-  const [loadingIA, setLoadingIA] = useState(false)
   const [showGraphiques, setShowGraphiques] = useState(false)
+  const [aSupprimer, setASupprimer] = useState(null)
 
   const courses = useMemo(() => {
     return seances
@@ -58,42 +57,27 @@ export default function CourseAnalyse({ seances, repas, objectifs, onRefresh }) 
       : '—'
     return { nb: courses.length, distanceTotal, allureMoy, meilleureAllure }
   }, [courses])
-async function supprimerCourse(id) {
-    if (!confirm('Supprimer cette course ?')) return
-    await supabase.from('seances').delete().eq('id', id)
+
+  async function confirmerSuppression() {
+    if (!aSupprimer) return
+    await supabase.from('seances').delete().eq('id', aSupprimer)
+    setASupprimer(null)
     onRefresh()
-  }
-  async function analyser() {
-    setLoadingIA(true)
-    try {
-      const repasperiode = repas.filter(r => {
-        const diff = (new Date().getTime() - new Date(r.date).getTime()) / (1000 * 60 * 60 * 24)
-        return diff <= periode
-      })
-      const res = await fetch('/api/analyse-course', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courses, repas: repasperiode, objectifs, periode })
-      })
-      const data = await res.json()
-      if (data.analyse) setAnalyseIA(data)
-    } catch(e) { console.error(e) }
-    setLoadingIA(false)
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-[22px]">
 
-      {/* Filtre période */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="font-medium">Analyse course</div>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+      {/* Filtre période + stats */}
+      <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+        <div className="flex justify-between items-center mb-5">
+          <div className="text-[18px] font-extrabold text-[#2a1a12]">Analyse course</div>
+          <div className="flex gap-1 bg-[#f9f6f3] rounded-xl p-1">
             {PERIODES.map(p => (
               <button
                 key={p.jours}
                 onClick={() => { setPeriode(p.jours); setAnalyseIA(null); setShowGraphiques(false) }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${periode === p.jours ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${periode === p.jours ? 'bg-white text-[#2a1a12] shadow-[0_2px_6px_rgba(0,0,0,0.08)]' : 'text-[#8a807a]'}`}
               >
                 {p.label}
               </button>
@@ -101,135 +85,144 @@ async function supprimerCourse(id) {
           </div>
         </div>
 
-        {/* Stats */}
         {stats ? (
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-blue-50 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-blue-700">{stats.nb}</div>
-              <div className="text-xs text-blue-500 mt-1">courses</div>
+            <div className="bg-[#dceeff] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-extrabold text-[#185fa5]">{stats.nb}</div>
+              <div className="text-xs text-[#378ADD] font-semibold mt-1">courses</div>
             </div>
-            <div className="bg-green-50 rounded-xl p-3 text-center">
-              <div className="text-2xl font-bold text-green-700">{stats.distanceTotal}</div>
-              <div className="text-xs text-green-500 mt-1">km total</div>
+            <div className="bg-[#d4f5ec] rounded-2xl p-4 text-center">
+              <div className="text-2xl font-extrabold text-[#13a884]">{stats.distanceTotal}</div>
+              <div className="text-xs text-[#16c79a] font-semibold mt-1">km total</div>
             </div>
-            <div className="bg-amber-50 rounded-xl p-3 text-center">
-              <div className="text-lg font-bold text-amber-700">{stats.allureMoy}</div>
-              <div className="text-xs text-amber-500 mt-1">allure moy.</div>
+            <div className="bg-[#faeeda] rounded-2xl p-4 text-center">
+              <div className="text-lg font-extrabold text-[#854f0b]">{stats.allureMoy}</div>
+              <div className="text-xs text-[#EF9F27] font-semibold mt-1">allure moy.</div>
             </div>
-            <div className="bg-purple-50 rounded-xl p-3 text-center">
-              <div className="text-lg font-bold text-purple-700">{stats.meilleureAllure}</div>
-              <div className="text-xs text-purple-500 mt-1">meilleure allure</div>
+            <div className="bg-[#efeaff] rounded-2xl p-4 text-center">
+              <div className="text-lg font-extrabold text-[#6b4fd6]">{stats.meilleureAllure}</div>
+              <div className="text-xs text-[#7c5cff] font-semibold mt-1">meilleure allure</div>
             </div>
           </div>
         ) : (
-          <div className="text-center text-sm text-gray-400 py-4">Aucune course sur cette période</div>
+          <div className="text-center text-sm text-[#b0a8a2] py-6">Aucune course sur cette période</div>
         )}
       </div>
 
       {courses.length > 0 && (
         <>
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
+          {/* Toggle graphiques */}
+          <div className="rounded-[26px] bg-white p-4 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
             <button
               onClick={() => setShowGraphiques(!showGraphiques)}
-              className="w-full flex justify-between items-center text-sm font-medium"
+              className="w-full flex justify-between items-center px-3 py-1"
             >
-              <span>📈 Graphiques</span>
-              <span className="text-gray-400">{showGraphiques ? '−' : '+'}</span>
+              <span className="text-sm font-bold text-[#2a1a12]">📈 Graphiques</span>
+              <span className="text-[#b0a8a2] text-lg leading-none">{showGraphiques ? '−' : '+'}</span>
             </button>
           </div>
 
           {showGraphiques && (
-            <div className="flex flex-col gap-4">
-            {/* Graphique allure */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <div className="font-medium mb-4">Évolution de l'allure</div>
-            <div className="text-xs text-gray-400 mb-3">Plus bas = plus rapide</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={courses.filter(c => c.allureDecimal)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-                <YAxis
-                  reversed
-                  domain={['auto', 'auto']}
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={formatAllure}
-                />
-                <Tooltip formatter={(val) => [formatAllure(val), 'Allure']} labelFormatter={(l) => l} />
-                <Line type="monotone" dataKey="allureDecimal" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+            <div className="flex flex-col gap-[22px]">
+              {/* Graphique allure */}
+              <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+                <div className="text-[18px] font-extrabold text-[#2a1a12] mb-1">Évolution de l'allure</div>
+                <div className="text-[13px] text-[#8a807a] mb-4">Plus bas = plus rapide</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={courses.filter(c => c.allureDecimal)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3eee9" />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#b0a8a2' }} tickLine={false} axisLine={false} />
+                    <YAxis
+                      reversed
+                      domain={['auto', 'auto']}
+                      tick={{ fontSize: 11, fill: '#b0a8a2' }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatAllure}
+                      width={56}
+                    />
+                    <Tooltip
+                      formatter={(val) => [formatAllure(val), 'Allure']}
+                      labelFormatter={(l) => l}
+                      contentStyle={{ borderRadius: 12, border: '1px solid #f3eee9', fontSize: 13 }}
+                    />
+                    <Line type="monotone" dataKey="allureDecimal" stroke="#7c5cff" strokeWidth={2.5} dot={{ r: 4, fill: '#7c5cff' }} activeDot={{ r: 5, fill: '#7c5cff', stroke: 'white', strokeWidth: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
 
-          {/* Graphique distance */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <div className="font-medium mb-4">Distance par course</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={courses}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="dateLabel" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} unit=" km" />
-                <Tooltip formatter={(val) => [`${val} km`, 'Distance']} />
-                <Bar dataKey="distanceNum" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          </div>
+              {/* Graphique distance */}
+              <div className="rounded-[26px] bg-white p-[26px_28px] shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)]">
+                <div className="text-[18px] font-extrabold text-[#2a1a12] mb-4">Distance par course</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={courses}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3eee9" />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#b0a8a2' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#b0a8a2' }} tickLine={false} axisLine={false} unit=" km" width={50} />
+                    <Tooltip
+                      formatter={(val) => [`${val} km`, 'Distance']}
+                      contentStyle={{ borderRadius: 12, border: '1px solid #f3eee9', fontSize: 13 }}
+                    />
+                    <Bar dataKey="distanceNum" fill="#378ADD" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
 
           {/* Liste courses */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 font-medium">Détail des courses</div>
-            <div className="divide-y divide-gray-50">
+          <div className="rounded-[26px] bg-white shadow-[0_12px_28px_-18px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div className="px-7 py-5 border-b border-[#f3eee9] text-[18px] font-extrabold text-[#2a1a12]">Détail des courses</div>
+            <div className="flex flex-col">
               {[...courses].reverse().map(c => (
-                <div key={c.id} className="px-6 py-3 flex justify-between items-center">
+                <div key={c.id} className="px-7 py-3.5 flex justify-between items-center border-b border-[#f3eee9] last:border-0">
                   <div>
-                    <div className="text-sm font-medium text-gray-800">{c.nom}</div>
-                    <div className="text-xs text-gray-400">{new Date(c.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}</div>
+                    <div className="text-sm font-bold text-[#2a1a12]">{c.nom}</div>
+                    <div className="text-xs text-[#b0a8a2] mt-0.5">{new Date(c.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}</div>
                   </div>
-                  <div className="flex gap-2 text-xs text-gray-600 items-center">
-                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{c.distanceNum} km</span>
-                    <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full">{c.allureStr}</span>
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{c.duree} min</span>
-                    <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded-full">{c.kcal} kcal</span>
-                    <button onClick={() => supprimerCourse(c.id)} className="text-gray-300 hover:text-red-400 ml-1">✕</button>
+                  <div className="flex gap-2 text-xs items-center">
+                    <span className="font-bold px-2.5 py-1 rounded-full bg-[#dceeff] text-[#185fa5]">{c.distanceNum} km</span>
+                    <span className="font-bold px-2.5 py-1 rounded-full bg-[#efeaff] text-[#6b4fd6]">{c.allureStr}</span>
+                    <span className="font-bold px-2.5 py-1 rounded-full bg-[#f9f6f3] text-[#8a807a]">{c.duree} min</span>
+                    <span className="font-bold px-2.5 py-1 rounded-full bg-[#fff3ea] text-[#c2876b]">{c.kcal} kcal</span>
+                    <button onClick={() => setASupprimer(c.id)} className="text-[#d8cfc8] hover:text-[#e2553f] ml-1 transition-colors">✕</button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Coach IA */}
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
-              <div>
-                <div className="font-medium">Analyse IA de mes performances</div>
-                <div className="text-xs text-gray-400 mt-1">Basée sur tes courses et ton alimentation</div>
-              </div>
-              <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">IA</span>
-            </div>
-            <div className="px-6 py-4">
-              {!analyseIA && (
-                <div className="text-center py-4">
-                  <button onClick={analyser} disabled={loadingIA} className="bg-black text-white rounded-lg px-6 py-2 text-sm disabled:opacity-40">
-                    {loadingIA ? 'Analyse en cours...' : 'Analyser mes performances ✨'}
-                  </button>
-                </div>
-              )}
-              {analyseIA && (
-                <div>
-                  <div className="bg-gray-50 rounded-xl p-4 mb-3 text-sm text-gray-700 leading-relaxed">{analyseIA.analyse}</div>
-                  {analyseIA.points?.map((p, i) => (
-                    <div key={i} className="flex items-start gap-2 mb-2">
-                      <span className={`text-xs mt-1 ${p.positif ? 'text-green-600' : 'text-amber-600'}`}>{p.positif ? '✓' : '→'}</span>
-                      <span className="text-sm text-gray-600">{p.texte}</span>
-                    </div>
-                  ))}
-                  <button onClick={() => setAnalyseIA(null)} className="text-xs text-gray-400 underline mt-2">Regénérer</button>
-                </div>
-              )}
+        </>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {aSupprimer && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+          onClick={() => setASupprimer(null)}
+        >
+          <div
+            className="bg-white rounded-[26px] shadow-2xl w-full max-w-[380px] p-7 text-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-[17px] font-extrabold text-[#2a1a12] mb-2">Supprimer cette course ?</div>
+            <div className="text-sm text-[#8a807a] mb-6">Cette action est définitive et ne peut pas être annulée.</div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setASupprimer(null)}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-bold bg-[#f9f6f3] text-[#8a807a]"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmerSuppression}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-bold bg-[#e2553f] text-white"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
