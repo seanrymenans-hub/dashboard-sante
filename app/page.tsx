@@ -120,8 +120,13 @@ export default function Home() {
 
     // Le cas qu'on corrige : le budget a été figé à kcal_pas=0 alors qu'on a
     // bien des pas réels pour cette date désormais.
-    if ((budgetHier.kcal_pas || 0) === 0 && kcalPasReel > 0) {
-      const kcalSportHier = seancesHier.reduce((s, r) => s + (r.kcal || 0), 0)
+    const kcalSportHier = seancesHier.reduce((s, r) => s + (r.kcal || 0), 0)
+    const pasMissing = (budgetHier.kcal_pas || 0) === 0 && kcalPasReel > 0
+    const sportMissing = (budgetHier.kcal_sport || 0) === 0 && kcalSportHier > 0
+
+    if (pasMissing || sportMissing) {
+      const kcalPasCorrige = pasMissing ? kcalPasReel : (budgetHier.kcal_pas || 0)
+      const kcalSportCorrige = sportMissing ? kcalSportHier : (budgetHier.kcal_sport || 0)
       const tefHier = budgetHier.tef || Math.round((budgetHier.tmb || budget.tmb) * 0.1)
       const depenseTotalHier = (budgetHier.tmb || budget.tmb) + kcalSportHier + kcalPasReel + tefHier
       const budgetJourHier = Math.max(1200, depenseTotalHier - (budgetHier.deficit_cible || budget.deficitCible))
