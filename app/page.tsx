@@ -128,7 +128,7 @@ export default function Home() {
       const kcalPasCorrige = pasMissing ? kcalPasReel : (budgetHier.kcal_pas || 0)
       const kcalSportCorrige = sportMissing ? kcalSportHier : (budgetHier.kcal_sport || 0)
       const tefHier = budgetHier.tef || Math.round((budgetHier.tmb || budget.tmb) * 0.1)
-      const depenseTotalHier = (budgetHier.tmb || budget.tmb) + kcalSportHier + kcalPasReel + tefHier
+      const depenseTotalHier = (budgetHier.tmb || budget.tmb) + kcalSportCorrige + kcalPasCorrige + tefHier
       const budgetJourHier = Math.max(1200, depenseTotalHier - (budgetHier.deficit_cible || budget.deficitCible))
 
       supabase.from('daily_budget').upsert(
@@ -136,8 +136,8 @@ export default function Home() {
           date: hierStr,
           budget_jour: budgetJourHier,
           tmb: budgetHier.tmb,
-          kcal_pas: kcalPasReel,
-          kcal_sport: kcalSportHier,
+          kcal_pas: kcalPasCorrige,
+          kcal_sport: kcalSportCorrige,
           tef: tefHier,
           deficit_cible: budgetHier.deficit_cible || budget.deficitCible,
         },
