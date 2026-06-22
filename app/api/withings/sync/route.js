@@ -53,11 +53,16 @@ export async function GET(request) {
   if (actData.status === 0 && actData.body?.activities) {
     for (const activity of actData.body.activities) {
       if (activity.steps > 0) {
+        // On ne fait pas confiance à activity.calories de l'API Withings : sans
+        // tracker d'activité dédié (les pas viennent d'Apple Health relayé via
+        // Withings), ce champ peut renvoyer des valeurs aberrantes. On recalcule
+        // avec la même formule que le Health Engine (0.04 kcal/pas).
+        const caloriesPasCalculees = Math.round(activity.steps * 0.04)
         await supabase.from('pas').upsert(
           {
             date: activity.date,
             nb_pas: activity.steps,
-            calories_pas: Math.round(activity.calories || 0),
+            calories_pas: caloriesPasCalculees,
             distance_m: Math.round(activity.distance || 0),
             source: 'withings'
           },
@@ -68,7 +73,18 @@ export async function GET(request) {
     }
   }
 
-  // Si sync pas uniquement, on retourne ici
+  // Recalculer le budget du jour côté serveur après synchro des pas —
+  // garantit que daily_budget est toujours à jour avec les vrais pas,
+  // sans dépendre du useEffect côté client qui peut s'exécuter avant
+  // que les données Withings arrivent.
+  const today = new Date().toISOString().split('T')[0]
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  await fetch(`${appUrl}/api/daily-budget/upsert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: today })
+  }).catch(e => console.error('Erreur appel daily-budget/upsert:', e))
+
   if (syncPasOnly) {
     return Response.json({ success: true, pasSynced })
   }

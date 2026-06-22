@@ -77,6 +77,22 @@ export default function Home() {
   // change réellement, pas à chaque re-render (changement d'onglet, popup, etc.)
   useEffect(() => {
     if (loading) return
+    console.log('💾 Sauvegarde budget:', { today, budgetJour: budget.budgetJour, tmb: budget.tmb, kcalPas: budget.kcalPas, kcalSport: budget.kcalSport })
+    supabase.from('daily_budget').upsert(
+      {
+        date: today,
+        budget_jour: budget.budgetJour,
+        tmb: budget.tmb,
+        kcal_pas: budget.kcalPas,
+        kcal_sport: budget.kcalSport,
+        tef: Math.round(budget.tmb * 0.1),
+        deficit_cible: budget.deficitCible,
+      },
+      { onConflict: 'date' }
+    ).then(({ error }) => {
+      if (error) console.error('❌ Erreur upsert daily_budget:', error)
+      else console.log('✅ daily_budget écrit pour', today)
+    })
     supabase.from('daily_budget').upsert(
       {
         date: today,

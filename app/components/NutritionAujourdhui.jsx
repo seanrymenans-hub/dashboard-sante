@@ -18,9 +18,15 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
   const isToday = selectedDate === todayStr
 
   const budgetHistorique = dailyBudgets?.find(b => b.date === selectedDate)
+  const seancesDate = seances?.filter(s => s.date === selectedDate) || []
+  const kcalSportDate = seancesDate.reduce((s, r) => s + (r.kcal || 0), 0)
+  const tmb = objectifs?.tmb || 1875
+  const tef = Math.round(tmb * 0.1)
+  const deficit = objectifs?.deficit_cible || 750
+  const budgetFallback = Math.max(1200, tmb + tef + kcalSportDate - deficit)
   const kcalObj = isToday
-    ? (budgetJour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
-    : (budgetHistorique?.budget_jour || Math.max(1200, (objectifs?.tmb || 1875) + Math.round((objectifs?.tmb || 1875) * 0.1) - (objectifs?.deficit_cible || 750)))
+    ? (budgetJour || budgetFallback)
+    : (budgetHistorique?.budget_jour || budgetFallback)
   const poidsActuelPourMacros = objectifs?.poids_depart || 83
   const protObjFixe = Math.round(poidsActuelPourMacros * 2)
   const lipObjHistorique = budgetHistorique ? Math.round(budgetHistorique.budget_jour * 0.25 / 9) : 38
@@ -206,10 +212,9 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
               <div className="space-y-1">
                 <div className="flex justify-between"><span>TMB</span><span>+{budget.tmb} kcal</span></div>
                 <div className="flex justify-between"><span>Effet thermique (~10%)</span><span>+{Math.round(budget.tmb * 0.1)} kcal</span></div>
-                <div className="flex justify-between"><span>👟 Pas</span><span>+{budget.kcalPas} kcal</span></div>
-                <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budget.kcalSport} kcal</span></div>
-                <div className="border-t border-[#f0e4d8] pt-1 mt-1 flex justify-between font-bold text-[#2a1a12]"><span>Dépense totale</span><span>{budget.depenseTotal} kcal</span></div>
-                <div className="flex justify-between text-[#e2553f]"><span>Déficit cible</span><span>-{budget.deficitCible} kcal</span></div>
+                <div className="flex justify-between"><span>👟 Pas</span><span>+{budgetHistorique?.kcal_pas || 0} kcal</span></div>
+                <div className="flex justify-between"><span>🏋️ Sport</span><span>+{budgetHistorique?.kcal_sport || kcalSportDate} kcal</span></div>
+                <div className="flex justify-between text-[#e2553f]"><span>Déficit cible</span><span>-{budgetHistorique?.deficit_cible || deficit} kcal</span></div>
                 <div className="border-t border-[#f0e4d8] pt-1 mt-1 flex justify-between font-bold text-[#ff6b4a]"><span>Budget du jour</span><span>{kcalObj} kcal</span></div>
               </div>
             ) : (
