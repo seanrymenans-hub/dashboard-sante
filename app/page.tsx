@@ -276,6 +276,13 @@ export default function Home() {
           <Parametres
             onClose={() => setShowParametres(false)}
             onSave={fetchData}
+            poids={poids}
+            composition={composition}
+            repas={repas}
+            seances={seances}
+            pas={pas}
+            dailyBudgets={dailyBudgets}
+            objectifs={objectifs}
           />
         )}
       </main>

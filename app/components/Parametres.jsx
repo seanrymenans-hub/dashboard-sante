@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import RecalculerBudget from './RecalculerBudget'
+import ExportDonnees from './ExportDonnees'
 
-export default function Parametres({ onClose, onSave }) {
-  const [poids, setPoidsObj] = useState(70)
+export default function Parametres({ onClose, onSave, poids, composition, repas, seances, pas, dailyBudgets, objectifs: objectifsProps }) {
+  const [poidsCible, setPoidsObj] = useState(70)
   const [poidsDepart, setPoidsDepart] = useState(83.2)
   const [age, setAge] = useState(25)
   const [taille, setTaille] = useState(175)
@@ -42,7 +43,7 @@ export default function Parametres({ onClose, onSave }) {
 
     const { data: existing } = await supabase.from('objectifs').select('id').limit(1).single()
     const payload = {
-      poids_objectif: poids,
+      poids_objectif: poidsCible,
       poids_depart: poidsDepart,
       kcal_journalier: kcalObj,
       proteines_objectif: proteines,
@@ -62,7 +63,7 @@ export default function Parametres({ onClose, onSave }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="font-medium text-lg">Mes paramètres</div>
           <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
@@ -95,7 +96,7 @@ export default function Parametres({ onClose, onSave }) {
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1">Objectif (kg)</label>
-              <input type="number" step="0.1" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={poids} onChange={e => setPoidsObj(Number(e.target.value))} />
+              <input type="number" step="0.1" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={poidsCible} onChange={e => setPoidsObj(Number(e.target.value))} />
             </div>
           </div>
 
@@ -123,10 +124,24 @@ export default function Parametres({ onClose, onSave }) {
             </div>
           </div>
 
-          {/* Outil de maintenance — distinct visuellement des paramètres de profil */}
+          {/* Maintenance */}
           <div className="border-t border-gray-100 pt-4">
             <div className="text-xs font-medium text-gray-500 mb-3">Maintenance</div>
             <RecalculerBudget />
+          </div>
+
+          {/* Export données */}
+          <div className="border-t border-gray-100 pt-4">
+            <div className="text-xs font-medium text-gray-500 mb-3">Export des données</div>
+            <ExportDonnees
+              poids={poids}
+              composition={composition}
+              repas={repas}
+              seances={seances}
+              pas={pas}
+              dailyBudgets={dailyBudgets}
+              objectifs={objectifsProps}
+            />
           </div>
         </div>
 
