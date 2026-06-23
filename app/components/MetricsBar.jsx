@@ -19,7 +19,7 @@ export default function MetricsBar({ poids, repas, seances, objectifs, pas }) {
       onClick={() => setShowDetail(!showDetail)}
     >
   
-      <div className="relative w-40 h-40 flex-none flex items-center justify-center">
+      <div className="relative w-28 h-28 md:w-40 md:h-40 flex-none flex items-center justify-center">
         <div
           className="absolute inset-0 rounded-full"
           style={{
@@ -29,30 +29,30 @@ export default function MetricsBar({ poids, repas, seances, objectifs, pas }) {
           }}
         />
         <div className="flex flex-col items-center justify-center">
-          <span className="text-4xl font-extrabold leading-none">{budget.kcalRestantes}</span>
+          <span className="text-2xl md:text-4xl font-extrabold leading-none">{budget.kcalRestantes}</span>
           <span className="text-[11px] opacity-85 mt-1 tracking-wide">KCAL RESTANTES</span>
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-bold opacity-90 tracking-wide">BUDGET CALORIQUE DU JOUR</div>
-        <div className="text-[13px] mt-2 opacity-75">
-          {budget.kcalConsommees} / {budget.budgetJour} kcal consommées
+        <div className="text-[13px] mt-2 opacity-75 truncate">
+          {budget.kcalConsommees} / {budget.budgetJour} kcal
           {budget.surplusOuDeficit > 0 && (
-            <span className="ml-1">· dépassement de {budget.surplusOuDeficit} kcal</span>
+            <span className="ml-1">· +{budget.surplusOuDeficit}</span>
           )}
         </div>
-        <div className="grid grid-cols-3 gap-2.5 mt-5">
-          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
-            <div className="text-[11px] opacity-80">TMB</div>
-            <div className="text-lg font-extrabold mt-0.5">{budget.tmb}</div>
+        <div className="grid grid-cols-3 gap-1.5 mt-4">
+          <div className="bg-white/20 rounded-xl px-2 py-2 text-center">
+            <div className="text-[10px] opacity-80">TMB</div>
+            <div className="text-sm font-extrabold mt-0.5 leading-tight">{budget.tmb}</div>
           </div>
-          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
-            <div className="text-[11px] opacity-80">Pas · {nbPas.toLocaleString('fr-FR')}</div>
-            <div className="text-lg font-extrabold mt-0.5">+{budget.kcalPas}</div>
+          <div className="bg-white/20 rounded-xl px-2 py-2 text-center">
+            <div className="text-[10px] opacity-80 truncate">👟 {nbPas.toLocaleString('fr-FR')}</div>
+            <div className="text-sm font-extrabold mt-0.5 leading-tight">+{budget.kcalPas}</div>
           </div>
-          <div className="bg-white/20 rounded-2xl px-4 py-2.5">
-            <div className="text-[11px] opacity-80">Sport</div>
-            <div className="text-lg font-extrabold mt-0.5">+{budget.kcalSport}</div>
+          <div className="bg-white/20 rounded-xl px-2 py-2 text-center">
+            <div className="text-[10px] opacity-80">💪 Sport</div>
+            <div className="text-sm font-extrabold mt-0.5 leading-tight">+{budget.kcalSport}</div>
           </div>
         </div>
       </div>
