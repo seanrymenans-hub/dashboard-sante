@@ -70,29 +70,11 @@ export default function Home() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-    const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas, dailyBudgets })
+  const engine = computeHealthEngine({ poids, repas, seances, composition, objectifs, pas, dailyBudgets })
   const { budget, progression: prog, tendances, macros, today } = engine
 
-  // Sauvegarder le budget du jour dans Supabase — uniquement quand budget.budgetJour
-  // change réellement, pas à chaque re-render (changement d'onglet, popup, etc.)
   useEffect(() => {
     if (loading) return
-    console.log('💾 Sauvegarde budget:', { today, budgetJour: budget.budgetJour, tmb: budget.tmb, kcalPas: budget.kcalPas, kcalSport: budget.kcalSport })
-    supabase.from('daily_budget').upsert(
-      {
-        date: today,
-        budget_jour: budget.budgetJour,
-        tmb: budget.tmb,
-        kcal_pas: budget.kcalPas,
-        kcal_sport: budget.kcalSport,
-        tef: Math.round(budget.tmb * 0.1),
-        deficit_cible: budget.deficitCible,
-      },
-      { onConflict: 'date' }
-    ).then(({ error }) => {
-      if (error) console.error('❌ Erreur upsert daily_budget:', error)
-      else console.log('✅ daily_budget écrit pour', today)
-    })
     supabase.from('daily_budget').upsert(
       {
         date: today,
@@ -107,11 +89,6 @@ export default function Home() {
     )
   }, [loading, today, budget.budgetJour, budget.tmb, budget.kcalPas, budget.kcalSport, budget.deficitCible])
 
-  // Filet de sécurité : si le budget d'HIER s'est figé avec kcal_pas à 0 parce
-  // que la synchro Apple Health n'était pas encore arrivée au moment où la page
-  // a été chargée hier, on le recalcule silencieusement ici, une fois que les
-  // vrais pas d'hier sont là. Ne se déclenche qu'UNE SEULE FOIS par session
-  // (via dejaVerifie.current) pour éviter tout risque de boucle de re-render.
   const dejaVerifie = useRef(false)
 
   useEffect(() => {
@@ -125,7 +102,7 @@ export default function Home() {
     const budgetHier = dailyBudgets.find(b => b.date === hierStr)
     const pasHier = pas.find(p => p.date === hierStr)
 
-    if (!budgetHier || !pasHier) return // rien à corriger si l'une des deux données manque
+    if (!budgetHier || !pasHier) return
 
     const nbPasReel = pasHier.nb_pas || 0
     const seancesHier = seances.filter(s => s.date === hierStr)
@@ -134,8 +111,6 @@ export default function Home() {
       .reduce((sum, s) => sum + Math.round((parseFloat(s.distance) || 0) * 1280), 0)
     const kcalPasReel = Math.round(Math.max(0, nbPasReel - pasDesCoursesHier) * 0.04)
 
-    // Le cas qu'on corrige : le budget a été figé à kcal_pas=0 alors qu'on a
-    // bien des pas réels pour cette date désormais.
     const kcalSportHier = seancesHier.reduce((s, r) => s + (r.kcal || 0), 0)
     const pasMissing = (budgetHier.kcal_pas || 0) === 0 && kcalPasReel > 0
     const sportMissing = (budgetHier.kcal_sport || 0) === 0 && kcalSportHier > 0
@@ -172,14 +147,15 @@ export default function Home() {
     <div className="min-h-screen flex bg-gradient-to-br from-[#fff3ea] to-[#ffeee0]">
       <Navigation ongletActif={onglet} setOnglet={setOnglet} onOpenParametres={() => setShowParametres(true)} userName="Sean" userPlan="Health Engine" />
 
-      <main className="flex-1 min-w-0 px-9 py-[30px]">
+      {/* padding-bottom sur mobile pour la barre de nav du bas */}
+      <main className="flex-1 min-w-0 px-4 md:px-9 py-[30px] pb-24 md:pb-[30px]">
         {onglet === 'accueil' && (
           <header className="flex justify-between items-center mb-7">
             <div>
               <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
-              <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+              <h1 className="mt-1 text-[24px] md:text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
                 Salut Sean 👋
               </h1>
             </div>
@@ -187,14 +163,14 @@ export default function Home() {
         )}
 
         {onglet === 'accueil' && (
-          <div className="grid grid-cols-[1.55fr_1fr] gap-[22px] items-stretch">
+          /* Sur mobile : colonne unique. Sur desktop : grille 2 colonnes */
+          <div className="flex flex-col md:grid md:grid-cols-[1.55fr_1fr] gap-[22px] md:items-stretch">
             <div className="flex flex-col gap-[22px]">
               <MetricsBar poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
               <div className="flex-1">
                 <CoachIA poids={poids} repas={repas} seances={seances} composition={composition} objectifs={objectifs} />
               </div>
             </div>
-
             <div className="flex flex-col gap-[22px]">
               <CartePoids poids={poids} repas={repas} seances={seances} objectifs={objectifs} pas={pas} />
               <MiniStats seances={seances} pas={pas} objectifs={objectifs} />
@@ -202,12 +178,13 @@ export default function Home() {
             </div>
           </div>
         )}
+
         {onglet === 'corps' && (
           <div>
             <div className="flex justify-between items-center mb-[22px]">
               <div>
                 <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">Composition corporelle</div>
-                <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+                <h1 className="mt-1 text-[24px] md:text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
                   Ton corps en détail
                 </h1>
               </div>
@@ -241,7 +218,7 @@ export default function Home() {
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">Activité</div>
-                <h1 className="mt-1 text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
+                <h1 className="mt-1 text-[24px] md:text-[28px] font-extrabold text-[#2a1a12] tracking-tight">
                   Ton sport cette semaine
                 </h1>
               </div>
