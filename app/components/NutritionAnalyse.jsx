@@ -74,8 +74,8 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
         <div className="grid grid-cols-3 gap-4">
           {fenetres.map(f => (
             <div key={f.label} className="flex flex-col items-center rounded-2xl py-6 px-3" style={{ background: couleurPctBg(f.pct) }}>
-              <div className="relative w-[104px] h-[104px]">
-                <svg width="104" height="104" viewBox="0 0 104 104">
+              <div className="relative w-[72px] h-[72px] md:w-[104px] md:h-[104px]">
+                <svg width="100%" height="100%" viewBox="0 0 104 104">
                   <circle cx="52" cy="52" r="44" fill="none" stroke="white" strokeWidth="11" />
                   <circle cx="52" cy="52" r="44" fill="none"
                     stroke={couleurPct(f.pct)}
@@ -87,7 +87,7 @@ export default function NutritionAnalyse({ repas, objectifs, seances, poids, com
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-2xl font-extrabold" style={{ color: couleurPct(f.pct) }}>{f.pct}%</span>
+                  <span className="text-lg md:text-2xl font-extrabold" style={{ color: couleurPct(f.pct) }}>{f.pct}%</span>
                 </div>
               </div>
               <span className="text-[13px] font-bold text-[#2a1a12] mt-3 text-center">{f.label}</span>

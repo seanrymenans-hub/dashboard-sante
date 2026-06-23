@@ -284,11 +284,11 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
             {macrosBars.map(m => {
               const pct = Math.min(100, Math.round(m.value / m.obj * 100))
               return (
-                <div key={m.label} className="flex flex-col items-center bg-[#f9f6f3] rounded-2xl py-6 px-3 relative overflow-hidden">
+                <div key={m.label} className="flex flex-col items-center bg-[#f9f6f3] rounded-2xl py-4 md:py-6 px-2 md:px-3 relative overflow-hidden">
                   {/* Fil chromatique reliant cet anneau au bloc calories du haut */}
                   <div className="absolute top-0 left-0 right-0 h-1" style={{ background: m.color }} />
-                  <div className="relative w-[120px] h-[120px]">
-                    <svg width="120" height="120" viewBox="0 0 120 120">
+                  <div className="relative w-[80px] h-[80px] md:w-[120px] md:h-[120px]">
+                    <svg width="100%" height="100%" viewBox="0 0 120 120">
                       <circle cx="60" cy="60" r="50" fill="none" stroke="#ece5dd" strokeWidth="13" />
                       <circle cx="60" cy="60" r="50" fill="none"
                         stroke={m.color}
@@ -300,8 +300,8 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-extrabold text-[#2a1a12] leading-none">{m.value}</span>
-                      <span className="text-xs text-[#b0a8a2] mt-1">/ {m.obj}g</span>
+                      <span className="text-base md:text-2xl font-extrabold text-[#2a1a12] leading-none">{m.value}</span>
+                      <span className="text-[10px] md:text-xs text-[#b0a8a2] mt-1">/ {m.obj}g</span>
                     </div>
                   </div>
                   <span className="text-[13px] font-bold mt-3" style={{ color: m.color }}>{m.label}</span>

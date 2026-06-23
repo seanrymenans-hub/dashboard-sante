@@ -86,22 +86,22 @@ export default function CourseAnalyse({ seances, repas, objectifs, macros, onRef
         </div>
 
         {stats ? (
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-[#dceeff] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-extrabold text-[#185fa5]">{stats.nb}</div>
-              <div className="text-xs text-[#378ADD] font-semibold mt-1">courses</div>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-[#dceeff] rounded-2xl p-2.5 md:p-4 text-center">
+              <div className="text-lg md:text-2xl font-extrabold text-[#185fa5]">{stats.nb}</div>
+              <div className="text-[10px] md:text-xs text-[#378ADD] font-semibold mt-1">courses</div>
             </div>
-            <div className="bg-[#d4f5ec] rounded-2xl p-4 text-center">
-              <div className="text-2xl font-extrabold text-[#13a884]">{stats.distanceTotal}</div>
-              <div className="text-xs text-[#16c79a] font-semibold mt-1">km total</div>
+            <div className="bg-[#d4f5ec] rounded-2xl p-2.5 md:p-4 text-center">
+              <div className="text-lg md:text-2xl font-extrabold text-[#13a884]">{stats.distanceTotal}</div>
+              <div className="text-[10px] md:text-xs text-[#16c79a] font-semibold mt-1">km total</div>
             </div>
-            <div className="bg-[#faeeda] rounded-2xl p-4 text-center">
-              <div className="text-lg font-extrabold text-[#854f0b]">{stats.allureMoy}</div>
-              <div className="text-xs text-[#EF9F27] font-semibold mt-1">allure moy.</div>
+            <div className="bg-[#faeeda] rounded-2xl p-2.5 md:p-4 text-center">
+              <div className="text-sm md:text-lg font-extrabold text-[#854f0b]">{stats.allureMoy}</div>
+              <div className="text-[10px] md:text-xs text-[#EF9F27] font-semibold mt-1">allure moy.</div>
             </div>
-            <div className="bg-[#efeaff] rounded-2xl p-4 text-center">
-              <div className="text-lg font-extrabold text-[#6b4fd6]">{stats.meilleureAllure}</div>
-              <div className="text-xs text-[#7c5cff] font-semibold mt-1">meilleure allure</div>
+            <div className="bg-[#efeaff] rounded-2xl p-2.5 md:p-4 text-center">
+              <div className="text-sm md:text-lg font-extrabold text-[#6b4fd6]">{stats.meilleureAllure}</div>
+              <div className="text-[10px] md:text-xs text-[#7c5cff] font-semibold mt-1">meilleure allure</div>
             </div>
           </div>
         ) : (

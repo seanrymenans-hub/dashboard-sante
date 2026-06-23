@@ -155,21 +155,21 @@ export default function Sport({ seances, onRefresh, poids, pas, budget }) {
           <div className="text-xs text-white/70 font-semibold mt-1">kcal dépensées aujourd'hui (TMB + effet thermique + pas + sport)</div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          <div className="bg-[#dceeff] rounded-2xl p-4 text-center">
-            <div className="text-xl font-extrabold text-[#185fa5]">{(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')}</div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="bg-[#dceeff] rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-xl font-extrabold text-[#185fa5]">{(pasAujourdhui?.nb_pas || 0).toLocaleString('fr-FR')}</div>
             <div className="text-xs text-[#378ADD] font-semibold mt-1">👟 pas</div>
           </div>
-          <div className="bg-[#f9f6f3] rounded-2xl p-4 text-center">
-            <div className="text-xl font-extrabold text-[#2a1a12]">{budget?.tmb || 0}</div>
+          <div className="bg-[#f9f6f3] rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-xl font-extrabold text-[#2a1a12]">{budget?.tmb || 0}</div>
             <div className="text-xs text-[#8a807a] font-semibold mt-1">⚙️ TMB</div>
           </div>
-          <div className="bg-[#fff3ea] rounded-2xl p-4 text-center">
-            <div className="text-xl font-extrabold text-[#c2876b]">{budget?.kcalPas || 0}</div>
+          <div className="bg-[#fff3ea] rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-xl font-extrabold text-[#c2876b]">{budget?.kcalPas || 0}</div>
             <div className="text-xs text-[#ff8a3d] font-semibold mt-1">🔥 kcal pas</div>
           </div>
-          <div className="bg-[#efeaff] rounded-2xl p-4 text-center">
-            <div className="text-xl font-extrabold text-[#6b4fd6]">{budget?.kcalSport || 0}</div>
+          <div className="bg-[#efeaff] rounded-2xl p-3 md:p-4 text-center">
+            <div className="text-base md:text-xl font-extrabold text-[#6b4fd6]">{budget?.kcalSport || 0}</div>
             <div className="text-xs text-[#7c5cff] font-semibold mt-1">💪 kcal sport</div>
           </div>
         </div>
