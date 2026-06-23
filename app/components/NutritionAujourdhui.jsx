@@ -185,7 +185,7 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
             </div>
           </div>
 
-          <div className="flex-1 grid grid-cols-[1fr_1fr_1.2fr] gap-3">
+          <div className="flex-1 grid grid-cols-3 gap-2">
             <div className="bg-[#fff3ea] rounded-2xl p-3.5 text-center">
               <div className="text-xl font-extrabold text-[#ff6b4a]">{kcalMange}</div>
               <div className="text-xs text-[#c2876b] mt-1 font-medium">kcal mangées</div>

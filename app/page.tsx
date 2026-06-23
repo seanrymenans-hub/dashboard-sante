@@ -181,7 +181,7 @@ export default function Home() {
 
         {onglet === 'corps' && (
           <div>
-            <div className="flex justify-between items-center mb-[22px]">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-[22px]">
               <div>
                 <div className="text-[13px] font-bold text-[#c2876b] tracking-wide uppercase">Composition corporelle</div>
                 <h1 className="mt-1 text-[24px] md:text-[28px] font-extrabold text-[#2a1a12] tracking-tight">

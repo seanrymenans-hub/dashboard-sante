@@ -61,14 +61,14 @@ export default function NutritionLayout({ repas, objectifs, composition, poids, 
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-[13px] font-bold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-[11px] md:text-[13px] font-bold transition-all min-w-0 ${
               tab === t.id
                 ? 'bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white shadow-[0_8px_18px_-8px_rgba(255,107,74,0.6)]'
                 : 'text-[#8a807a] hover:bg-[#fff3ea] hover:text-[#2a1a12]'
             }`}
           >
             {t.icon}
-            <span>{t.label}</span>
+            <span className="hidden sm:inline">{t.label}</span>
           </button>
         ))}
       </div>
