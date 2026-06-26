@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import RecalculerBudget from './RecalculerBudget'
+import RecalculerJour from './RecalculerJour'
 import ExportDonnees from './ExportDonnees'
 
 export default function Parametres({ onClose, onSave, poids, composition, repas, seances, pas, dailyBudgets, objectifs: objectifsProps }) {
@@ -128,6 +129,10 @@ export default function Parametres({ onClose, onSave, poids, composition, repas,
           <div className="border-t border-gray-100 pt-4">
             <div className="text-xs font-medium text-gray-500 mb-3">Maintenance</div>
             <RecalculerBudget />
+            <div className="mt-4">
+              <div className="text-xs font-medium text-gray-500 mb-3">Corriger un jour manquant</div>
+              <RecalculerJour />
+            </div>
           </div>
 
           {/* Export données */}
