@@ -190,7 +190,7 @@ export default function Home() {
               </div>
               <WithingsSync onRefresh={fetchData} syncPasOnly={false} />
             </div>
-            <Composition composition={composition} onRefresh={fetchData} analyseIA={compositionAnalyse} onAnalyseUpdate={setCompositionAnalyse} />
+            <Composition composition={composition} poids={poids} onRefresh={fetchData} analyseIA={compositionAnalyse} onAnalyseUpdate={setCompositionAnalyse} />
             <GraphiquePoids poids={poids} objectifs={objectifs} />
           </div>
         )}

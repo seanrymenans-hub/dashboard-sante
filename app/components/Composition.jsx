@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import GraphiqueComposition from './GraphiqueComposition'
 
-export default function Composition({ composition, onRefresh, analyseIA, onAnalyseUpdate }) {
+export default function Composition({ composition, poids, onRefresh, analyseIA, onAnalyseUpdate }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [masseGrasse, setMasseGrasse] = useState('')
   const [masseMusculaire, setMasseMusculaire] = useState('')
@@ -16,6 +16,7 @@ export default function Composition({ composition, onRefresh, analyseIA, onAnaly
   const [succes, setSucces] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [showGraphique, setShowGraphique] = useState(false)
+  const [showTableau, setShowTableau] = useState(false)
 
   const sorted = composition?.sort((a, b) => new Date(b.date) - new Date(a.date)) || []
   const derniere = sorted[0]
@@ -67,6 +68,26 @@ export default function Composition({ composition, onRefresh, analyseIA, onAnaly
   // Texte narratif pour les 2 métriques clés (gras/muscle) — explique le sens de l'évolution
   // Priorité au delta sur 7j (plus fiable, moins de bruit de mesure jour-à-jour),
   // fallback sur le delta "vs hier" seulement si la mesure 7j n'est pas encore disponible.
+  function exporterTableau() {
+    import('xlsx').then(XLSX => {
+      const rows = sorted.map(c => ({
+        'Date': new Date(c.date).toLocaleDateString('fr-FR'),
+        'Poids (kg)': poids?.find(p => p.date === c.date)?.valeur || '',
+        'Masse grasse (kg)': c.masse_grasse || '',
+        'Masse grasse (%)': c.masse_grasse_pct || '',
+        'Masse musculaire (kg)': c.masse_musculaire || '',
+        'Masse musculaire (%)': c.masse_musculaire_pct || '',
+        'Masse hydrique (kg)': c.masse_hydrique || '',
+        'Masse hydrique (%)': c.masse_hydrique_pct || '',
+      }))
+      const ws = XLSX.utils.json_to_sheet(rows)
+      ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 16 }, { wch: 16 }]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Composition')
+      XLSX.writeFile(wb, `composition_${new Date().toISOString().split('T')[0]}.xlsx`)
+    })
+  }
+
   function texteNarratif(diffHier, diff7j, positifSiDiminue) {
     const diff = diff7j !== null ? diff7j : diffHier
     const periode = diff7j !== null ? 'sur 7j' : 'vs hier'
@@ -236,6 +257,55 @@ export default function Composition({ composition, onRefresh, analyseIA, onAnaly
         {showGraphique && (
           <div className="mt-5 pt-5 border-t border-[#f3eee9]">
             <GraphiqueComposition composition={composition} />
+          </div>
+        )}
+
+        {/* Tableau historique */}
+        {sorted.length > 0 && (
+          <div className="mt-5 pt-5 border-t border-[#f3eee9]">
+            <div className="flex items-center justify-between mb-3">
+              <button
+                onClick={() => setShowTableau(!showTableau)}
+                className="flex items-center gap-2 text-[13px] font-bold text-[#2a1a12]"
+              >
+                <span>Tableau des mesures</span>
+                <span className="text-[#b0a8a2]">{showTableau ? '−' : '+'}</span>
+              </button>
+              {showTableau && (
+                <button
+                  onClick={exporterTableau}
+                  className="text-[11px] font-bold text-[#ff6b4a] border border-[#ff6b4a] rounded-lg px-3 py-1.5 hover:bg-[#fff3ea] transition-all"
+                >
+                  ⬇ Excel
+                </button>
+              )}
+            </div>
+          {showTableau && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-[#8a807a] font-semibold border-b border-[#f3eee9]">
+                  <th className="text-left pb-2 pr-4">Date</th>
+                  <th className="text-right pb-2 pr-4">Poids</th>
+                  <th className="text-right pb-2 pr-4">Masse grasse</th>
+                  <th className="text-right pb-2 pr-4">Masse musc.</th>
+                  <th className="text-right pb-2">Masse hydrique</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((c, i) => (
+                  <tr key={c.date} className={`border-b border-[#f9f6f3] ${i === 0 ? 'font-bold text-[#2a1a12]' : 'text-[#5a4f48]'}`}>
+                    <td className="py-2 pr-4">{new Date(c.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' })}</td>
+                    <td className="text-right py-2 pr-4">{poids?.find(p => p.date === c.date)?.valeur ? `${poids.find(p => p.date === c.date).valeur} kg` : '—'}</td>
+                    <td className="text-right py-2 pr-4">{c.masse_grasse ? `${c.masse_grasse} kg` : '—'}</td>
+                    <td className="text-right py-2 pr-4">{c.masse_musculaire ? `${c.masse_musculaire} kg` : '—'}</td>
+                    <td className="text-right py-2">{c.masse_hydrique ? `${c.masse_hydrique} kg` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          )}
           </div>
         )}
 
