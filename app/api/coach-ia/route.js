@@ -88,6 +88,10 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
       })
     })
     const data = await response.json()
+    if (!response.ok) {
+      console.error('GitHub Models error:', response.status, JSON.stringify(data))
+      return Response.json({ error: 'GitHub Models ' + response.status, details: data }, { status: 500 })
+    }
     const text = data.choices?.[0]?.message?.content || ''
     const clean = text.replace(/```json|```/g, '').trim()
     const result = JSON.parse(clean)
