@@ -25,7 +25,7 @@ ${coursesStr}
 NUTRITION MOYENNE SUR LA PÉRIODE :
 - Calories moyennes/jour : ${moyKcal} kcal
 - Protéines moyennes/jour : ${moyProt}g
-- Objectif calorique (dynamique, varie selon l'activité du jour) : ${objectifs?.kcal_journalier || 1850} kcal
+- Objectif calorique moyen (dynamique, varie selon l'activité du jour) : ${macros ? Math.round(macros.proteines * 4 + macros.lipides * 9 + macros.glucides * 4 + 750) : objectifs?.kcal_journalier || 1850} kcal
 - Objectif protéines (2g/kg de poids actuel) : ${macros?.proteines || objectifs?.proteines_objectif || 150}g
 
 Analyse :
@@ -46,7 +46,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 }`
 
   try {
-    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+    const response = await fetch('https://models.github.ai/inference/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,

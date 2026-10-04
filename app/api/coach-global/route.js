@@ -79,7 +79,7 @@ Réponds en JSON :
 }`
 
     try {
-      const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+      const response = await fetch('https://models.github.ai/inference/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
@@ -109,7 +109,7 @@ Réponds en JSON :
 
   // Chat normal
   try {
-    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+    const response = await fetch('https://models.github.ai/inference/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,

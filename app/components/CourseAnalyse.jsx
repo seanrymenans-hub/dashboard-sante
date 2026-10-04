@@ -76,7 +76,7 @@ export default function CourseAnalyse({ seances, repas, objectifs, macros, onRef
             {PERIODES.map(p => (
               <button
                 key={p.jours}
-                onClick={() => { setPeriode(p.jours); setAnalyseIA(null); setShowGraphiques(false) }}
+                onClick={() => { setPeriode(p.jours); setShowGraphiques(false) }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${periode === p.jours ? 'bg-white text-[#2a1a12] shadow-[0_2px_6px_rgba(0,0,0,0.08)]' : 'text-[#8a807a]'}`}
               >
                 {p.label}

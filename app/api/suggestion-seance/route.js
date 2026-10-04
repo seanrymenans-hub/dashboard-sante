@@ -83,7 +83,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
 {"type":"[course ou renforcement]","titre":"[nom de la séance]","duree":[nombre de minutes calculé],"distance":[km calculés sur base de l'historique, null si renforcement],"allure":"[min/km calculé sur base de l'historique, null si renforcement]","intensite":"[légère ou modérée ou intense]","groupesCibles":["[groupes musculaires ciblés, vide si course]"],"raison":"[explication détaillée et personnalisée 5-6 phrases]","exercices":[{"nom":"[nom exercice ou étape]","series":"[séries x reps ou distance x allure]","repos":"[temps de repos]"}]}`
 
   try {
-    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+    const response = await fetch('https://models.github.ai/inference/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,

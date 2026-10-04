@@ -55,7 +55,7 @@ Réponds d'abord par ton raisonnement de calcul (quantités choisies, kcal/macro
 JSON_FINAL:{"suggestions":[{"nom":"nom du repas","description":"description courte","kcal":0,"proteines":0,"glucides":0,"lipides":0,"ingredients":["150g de poulet grillé","100g de riz cuit"],"raison":"pourquoi ce repas est adapté"},{"nom":"nom du repas 2","description":"description courte","kcal":0,"proteines":0,"glucides":0,"lipides":0,"ingredients":["ingredient avec quantité"],"raison":"pourquoi ce repas est adapté"}]}`
 
   try {
-    const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+    const response = await fetch('https://models.github.ai/inference/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
