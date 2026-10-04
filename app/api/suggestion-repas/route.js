@@ -62,7 +62,7 @@ JSON_FINAL:{"suggestions":[{"nom":"nom du repas","description":"description cour
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3
       })

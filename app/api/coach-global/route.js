@@ -86,7 +86,7 @@ Réponds en JSON :
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'openai/gpt-4o-mini',
           messages: [{ role: 'user', content: summaryPrompt }],
           temperature: 0.5
         })
@@ -116,7 +116,7 @@ Réponds en JSON :
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         max_tokens: 1000,
         messages: [
           { role: 'system', content: systemPrompt },

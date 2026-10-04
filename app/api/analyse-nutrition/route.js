@@ -42,7 +42,7 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'openai/gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.5
       })
