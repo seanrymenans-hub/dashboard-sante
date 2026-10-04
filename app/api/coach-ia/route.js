@@ -87,7 +87,9 @@ Réponds UNIQUEMENT en JSON valide sans markdown :
         temperature: 0.7
       })
     })
-    const data = await response.json()
+    const raw = await response.text()
+    console.error('GitHub status:', response.status, 'body:', raw.slice(0, 300))
+    const data = JSON.parse(raw)
     if (!response.ok) {
       console.error('GitHub Models error:', response.status, JSON.stringify(data))
       return Response.json({ error: 'GitHub Models ' + response.status, details: data }, { status: 500 })

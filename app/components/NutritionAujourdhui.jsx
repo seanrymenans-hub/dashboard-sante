@@ -5,8 +5,10 @@ import { supabase } from '../../lib/supabase'
 export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seances, dailyBudgets, budgetJour = 0, budget, macros }) {
   const [nomAliment, setNomAliment] = useState('')
   const [typeRepas, setTypeRepas] = useState('dejeuner')
-  const [preview, setPreview] = useState(null)
-  const [loadingIA, setLoadingIA] = useState(false)
+  const [kcalSaisie, setKcalSaisie] = useState('')
+  const [protSaisie, setProtSaisie] = useState('')
+  const [glucSaisie, setGlucSaisie] = useState('')
+  const [lipSaisie, setLipSaisie] = useState('')
   const [loadingAjout, setLoadingAjout] = useState(false)
   const [showLogger, setShowLogger] = useState(false)
   const [showBudgetDetail, setShowBudgetDetail] = useState(false)
@@ -87,34 +89,36 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
     return (ordreTypes[a.type] ?? 9) - (ordreTypes[b.type] ?? 9)
   })
 
-  async function estimerMacros() {
-    if (!nomAliment.trim()) return
-    setLoadingIA(true)
-    setPreview(null)
-    try {
-      const res = await fetch('/api/estimer-aliment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aliment: nomAliment })
-      })
-      const data = await res.json()
-      if (data.kcal) setPreview(data)
-    } catch(e) { console.error(e) }
-    setLoadingIA(false)
-  }
+  const kcalCalculee = Math.round(
+    (parseFloat(protSaisie) || 0) * 4 + (parseFloat(glucSaisie) || 0) * 4 + (parseFloat(lipSaisie) || 0) * 9
+  )
+  const kcalFinale = kcalSaisie !== '' ? Math.round(parseFloat(kcalSaisie) || 0) : kcalCalculee
+  const formulaireValide = nomAliment.trim() !== '' && kcalFinale > 0
 
   async function ajouterRepas() {
-    if (!preview) return
+    if (!formulaireValide) return
     setLoadingAjout(true)
-    await supabase.from('repas').insert({
-      date: selectedDate, type: typeRepas, nom: preview.nom,
-      kcal: preview.kcal, proteines: preview.proteines,
-      glucides: preview.glucides, lipides: preview.lipides,
+    const { error } = await supabase.from('repas').insert({
+      date: selectedDate,
+      type: typeRepas,
+      nom: nomAliment.trim(),
+      kcal: kcalFinale,
+      proteines: parseFloat(protSaisie) || 0,
+      glucides: parseFloat(glucSaisie) || 0,
+      lipides: parseFloat(lipSaisie) || 0,
     })
-    setNomAliment('')
-    setPreview(null)
-    setShowLogger(false)
     setLoadingAjout(false)
+    if (error) {
+      console.error(error)
+      alert("Erreur lors de l'ajout du repas")
+      return
+    }
+    setNomAliment('')
+    setKcalSaisie('')
+    setProtSaisie('')
+    setGlucSaisie('')
+    setLipSaisie('')
+    setShowLogger(false)
     onRefresh()
   }
 
@@ -384,52 +388,43 @@ export default function NutritionAujourdhui({ repas, objectifs, onRefresh, seanc
                 ))}
               </div>
 
-              <div className="flex gap-2 mb-3">
-                <input
-                  autoFocus
-                  className="flex-1 border border-[#f3eee9] rounded-xl px-3.5 py-2.5 text-sm"
-                  placeholder="Ex: 150g de poulet grillé, 2 œufs brouillés..."
-                  value={nomAliment}
-                  onChange={e => { setNomAliment(e.target.value); setPreview(null) }}
-                  onKeyDown={e => e.key === 'Enter' && estimerMacros()}
-                />
-                <button
-                  onClick={estimerMacros}
-                  disabled={loadingIA || !nomAliment.trim()}
-                  className="bg-gradient-to-br from-[#2a1a12] to-[#4a2c1e] text-white rounded-xl px-5 py-2.5 text-sm font-bold disabled:opacity-40 flex-shrink-0"
-                >
-                  {loadingIA ? '...' : '✨ Estimer'}
-                </button>
+              <input
+                autoFocus
+                className="w-full border border-[#f3eee9] rounded-xl px-3.5 py-2.5 text-sm mb-3"
+                placeholder="Nom du repas (ex : Poulet riz brocoli)"
+                value={nomAliment}
+                onChange={e => setNomAliment(e.target.value)}
+              />
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  { label: 'Calories (kcal)', value: kcalSaisie, set: setKcalSaisie, placeholder: kcalCalculee > 0 ? String(kcalCalculee) : '0' },
+                  { label: 'Protéines (g)', value: protSaisie, set: setProtSaisie, placeholder: '0' },
+                  { label: 'Glucides (g)', value: glucSaisie, set: setGlucSaisie, placeholder: '0' },
+                  { label: 'Lipides (g)', value: lipSaisie, set: setLipSaisie, placeholder: '0' },
+                ].map(f => (
+                  <label key={f.label} className="flex flex-col gap-1">
+                    <span className="text-xs font-bold text-[#8a807a]">{f.label}</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      className="border border-[#f3eee9] rounded-xl px-3.5 py-2.5 text-sm"
+                      placeholder={f.placeholder}
+                      value={f.value}
+                      onChange={e => f.set(e.target.value)}
+                    />
+                  </label>
+                ))}
               </div>
 
-              {preview && (
-                <div className="bg-[#f9f6f3] rounded-2xl p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="text-sm font-bold text-[#2a1a12] mb-2">{preview.nom}</div>
-                      <div className="flex gap-2">
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-[#dceeff] text-[#185fa5]">P {preview.proteines}g</span>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-[#faeeda] text-[#854f0b]">G {preview.glucides}g</span>
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-[#d4f5ec] text-[#0f6e56]">L {preview.lipides}g</span>
-                      </div>
-                    </div>
-                    <span className="text-base font-extrabold text-[#2a1a12]">{preview.kcal} kcal</span>
-                  </div>
-                  {preview.note && <div className="text-xs text-[#b0a8a2] italic mb-3">{preview.note}</div>}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={ajouterRepas}
-                      disabled={loadingAjout}
-                      className="flex-1 bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)] disabled:opacity-40"
-                    >
-                      {loadingAjout ? '...' : '+ Ajouter ce repas'}
-                    </button>
-                    <button onClick={() => setPreview(null)} className="text-sm font-semibold text-[#8a807a] px-3">
-                      Modifier
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={ajouterRepas}
+                disabled={!formulaireValide || loadingAjout}
+                className="w-full bg-gradient-to-br from-[#ff6b4a] to-[#ff8a3d] text-white rounded-xl px-4 py-3 text-sm font-bold shadow-[0_8px_18px_-8px_rgba(255,107,74,0.7)] disabled:opacity-40"
+              >
+                {loadingAjout ? '...' : '+ Ajouter ce repas'}
+              </button>
             </div>
           </div>
         </div>
